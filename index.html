@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="es" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tu Primer Personaje</title>
+  <meta name="description" content="Crea tu primer personaje de D&D 5.ª edición paso a paso, aprende a tirar los dados y llévate tu hoja en PDF, imagen o al celular.">
+  <meta name="theme-color" content="#0E0A16">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,4 90,27 90,73 50,96 10,73 10,27' fill='%239E2419' stroke='%23E9C877' stroke-width='5'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+  <a class="salto" href="#principal">Saltar al contenido</a>
+
+  <header class="barra" id="barra">
+    <div class="container-xxl barra-int">
+      <a class="marca" href="#inicio" data-accion="ir-portada" aria-label="Tu Primer Personaje, ir al inicio">
+        <span class="marca-sello" aria-hidden="true"></span><span class="marca-texto">Tu Primer Personaje</span>
+      </a>
+      <nav class="barra-acciones" aria-label="Herramientas">
+        <button type="button" class="btn-barra d-lg-none" id="btn-vivo" data-bs-toggle="offcanvas" data-bs-target="#panel-vivo" aria-label="Ver mi personaje" hidden><span class="ico" data-ico="corona"></span></button>
+        <button type="button" class="btn-barra" data-bs-toggle="offcanvas" data-bs-target="#panel-dados"><span class="ico" data-ico="dados"></span><span class="etq">Dados</span></button>
+        <button type="button" class="btn-barra" data-bs-toggle="offcanvas" data-bs-target="#panel-asistente"><span class="ico" data-ico="pluma"></span><span class="etq">Pedir cambios</span></button>
+        <button type="button" class="btn-barra" data-bs-toggle="offcanvas" data-bs-target="#panel-guia"><span class="ico" data-ico="libro"></span><span class="etq">Guía</span></button>
+        <button type="button" class="btn-barra" data-bs-toggle="offcanvas" data-bs-target="#panel-apariencia" aria-label="Apariencia y accesibilidad"><span class="ico" data-ico="ojo"></span><span class="etq">Apariencia</span></button>
+      </nav>
+    </div>
+  </header>
+
+  <main id="principal" tabindex="-1">
+    <!-- ======= Portada ======= -->
+    <section id="vista-portada" class="portada" aria-labelledby="titulo-portada">
+      <div class="container-xxl">
+        <div class="row align-items-center g-4">
+          <div class="col-lg-7 portada-texto">
+            <p class="ojillo aparece" style="--i:0">Para quien nunca ha jugado · D&amp;D 5.ª edición</p>
+            <h1 id="titulo-portada" class="aparece" style="--i:1">Tu primer personaje</h1>
+            <p class="entrada aparece" style="--i:2">Te llevamos de la mano: aprendes a tirar los dados, creas tu héroe paso a paso y te llevas tu hoja en PDF, en imagen o directo a tu celular.</p>
+            <div class="portada-botones aparece" style="--i:3">
+              <button type="button" class="btn btn-primario btn-lg" data-accion="empezar" id="btn-empezar">Crear mi personaje</button>
+              <button type="button" class="btn btn-secundario btn-lg" data-accion="probar-dados">Tirar el dado</button>
+            </div>
+            <p class="continuar aparece" style="--i:4" id="continuar" hidden></p>
+          </div>
+          <div class="col-lg-5">
+            <button type="button" class="d20-portada" id="d20-portada" data-accion="probar-dados" aria-label="Tirar un dado de 20 caras">
+              <canvas id="d20-lienzo" aria-hidden="true"></canvas>
+              <span class="d20-plano" id="d20-plano" aria-hidden="true" hidden></span>
+            </button>
+          </div>
+        </div>
+        <ul class="beneficios">
+          <li class="revelar"><span class="ico" data-ico="corona"></span><div><h2>Empieza desde cero</h2><p>Un guía te explica cada decisión con palabras simples.</p></div></li>
+          <li class="revelar"><span class="ico" data-ico="dados"></span><div><h2>Dados en 3D</h2><p>Lánzalos en pantalla. También sirven para tus partidas.</p></div></li>
+          <li class="revelar"><span class="ico" data-ico="pergamino"></span><div><h2>Tu hoja, lista</h2><p>Descárgala en PDF o JPEG, o llévala al celular con un QR.</p></div></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ======= Creación guiada ======= -->
+    <section id="vista-crear" class="crear" hidden>
+      <div class="container-xxl">
+        <nav class="riel" aria-label="Pasos para crear tu personaje">
+          <div class="riel-resumen"><span id="riel-texto"></span><div class="riel-barra" role="progressbar" aria-label="Progreso" aria-valuemin="0" aria-valuemax="100" id="riel-progreso"><span id="riel-relleno"></span></div></div>
+          <ol id="riel-pasos"></ol>
+        </nav>
+        <div class="row g-4">
+          <div class="col-lg-8 col-xl-8">
+            <div class="narrador" id="narrador">
+              <span class="narrador-sello" aria-hidden="true"></span>
+              <div class="narrador-cuerpo">
+                <p class="visually-hidden" aria-live="polite" id="narrador-vivo"></p>
+                <p class="narrador-texto" id="narrador-texto" aria-hidden="true"></p>
+              </div>
+              <button type="button" class="btn-icono" id="btn-escuchar" data-accion="escuchar" aria-label="Escuchar lo que dice el guía" hidden><span class="ico" data-ico="voz"></span></button>
+            </div>
+            <div id="paso" class="paso" tabindex="-1"></div>
+            <div class="acciones-paso" id="acciones-paso">
+              <button type="button" class="btn btn-secundario" data-accion="atras" id="btn-atras">Atrás</button>
+              <p class="faltan" id="faltan" role="status"></p>
+              <button type="button" class="btn btn-primario" data-accion="siguiente" id="btn-siguiente">Siguiente</button>
+            </div>
+          </div>
+          <aside class="col-lg-4 d-none d-lg-block" aria-label="Tu personaje hasta ahora">
+            <div class="vivo" id="vivo"></div>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======= Hoja abierta desde un QR ======= -->
+    <section id="vista-visor" class="crear" hidden aria-labelledby="titulo-visor">
+      <div class="container-xxl">
+        <p class="ojillo">Hoja recibida por QR</p>
+        <h1 id="titulo-visor" class="titulo-paso"></h1>
+        <p class="estado" id="visor-estado" role="status"></p>
+        <div id="visor-hoja"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="container-xxl">
+      <p><strong>Proyecto no oficial.</strong> Dungeons &amp; Dragons y D&amp;D son marcas de Wizards of the Coast, que no respalda este sitio. Las reglas están explicadas con palabras propias.</p>
+      <p>Incluye material del System Reference Document 5.1 («SRD 5.1») de Wizards of the Coast LLC, disponible en <a href="https://dnd.wizards.com/resources/systems-reference-document" rel="noopener" target="_blank">dnd.wizards.com</a>, con licencia <a href="https://creativecommons.org/licenses/by/4.0/legalcode" rel="noopener" target="_blank">Creative Commons Atribución 4.0</a>. Iconos de Lorc, Delapouite y colaboradores en <a href="https://game-icons.net" rel="noopener" target="_blank">game-icons.net</a>, con licencia <a href="https://creativecommons.org/licenses/by/3.0/" rel="noopener" target="_blank">CC BY 3.0</a>; se les cambió el color y el tamaño. Fuentes Almendra, Cinzel, Figtree y Atkinson Hyperlegible, con licencia OFL.</p>
+    </div>
+  </footer>
+
+  <!-- Dados 3D -->
+  <dialog id="capa-dados" class="capa-dados" aria-label="Lanzamiento de dados">
+    <canvas id="dados-lienzo" aria-hidden="true"></canvas>
+    <div class="capa-resultado" id="capa-resultado"></div>
+  </dialog>
+  <div class="visually-hidden" aria-live="polite" id="vivo-dados"></div>
+
+  <!-- Panel de dados -->
+  <div class="offcanvas offcanvas-end panel" tabindex="-1" id="panel-dados" aria-labelledby="t-panel-dados">
+    <div class="offcanvas-header"><h2 class="offcanvas-title" id="t-panel-dados">Bolsa de dados</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button></div>
+    <div class="offcanvas-body">
+      <p>Elige qué lanzar. El número que aparece en cada dado es el resultado real.</p>
+      <div class="bolsa" id="bolsa" role="group" aria-label="Dados"></div>
+      <div class="row g-3 mt-1">
+        <div class="col-6"><label class="form-label" for="bolsa-cantidad">Cuántos</label><input class="form-control" type="number" id="bolsa-cantidad" min="1" max="10" value="1"></div>
+        <div class="col-6"><label class="form-label" for="bolsa-suma">Sumar</label><input class="form-control" type="number" id="bolsa-suma" min="-20" max="50" value="0"></div>
+      </div>
+      <fieldset class="mt-3"><legend class="form-label">Con el d20</legend>
+        <div class="segmento">
+          <input type="radio" class="btn-check" name="bolsa-modo" id="modo-normal" value="normal" checked><label for="modo-normal">Normal</label>
+          <input type="radio" class="btn-check" name="bolsa-modo" id="modo-ventaja" value="ventaja"><label for="modo-ventaja">Ventaja</label>
+          <input type="radio" class="btn-check" name="bolsa-modo" id="modo-desventaja" value="desventaja"><label for="modo-desventaja">Desventaja</label>
+        </div>
+      </fieldset>
+      <button type="button" class="btn btn-primario w-100 mt-4" data-accion="lanzar-bolsa" id="btn-bolsa">Lanzar</button>
+      <h3 class="mt-4">Últimas tiradas</h3>
+      <ol class="historial" id="historial"><li class="ayuda">Todavía no has lanzado nada.</li></ol>
+    </div>
+  </div>
+
+  <!-- Lenguaje natural -->
+  <div class="offcanvas offcanvas-end panel panel-ancho" tabindex="-1" id="panel-asistente" aria-labelledby="t-panel-asistente">
+    <div class="offcanvas-header"><h2 class="offcanvas-title" id="t-panel-asistente">Pedir cambios</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button></div>
+    <div class="offcanvas-body" id="asistente-casa">
+      <div id="asistente" class="asistente">
+        <form id="form-asistente" novalidate>
+          <label class="form-label" for="texto-asistente">Escríbelo como se lo dirías a un amigo</label>
+          <div class="campo-voz">
+            <textarea class="form-control" id="texto-asistente" rows="3" placeholder="Por ejemplo: quiero una elfa sigilosa con arco"></textarea>
+            <button type="button" class="btn-icono btn-voz" id="btn-dictar" data-accion="dictar" aria-label="Dictar por voz" aria-pressed="false" hidden><span class="ico" data-ico="micro"></span></button>
+          </div>
+          <div class="chips" id="ejemplos" role="group" aria-label="Ejemplos"></div>
+          <div class="d-flex flex-wrap gap-2 align-items-center mt-3">
+            <button type="submit" class="btn btn-primario" id="btn-revisar">Revisar lo que pedí</button>
+            <span class="insignia" id="insignia-ia">Sin IA</span>
+          </div>
+          <p class="estado" id="estado-asistente" role="status"></p>
+        </form>
+        <section id="propuesta" class="propuesta" aria-labelledby="t-propuesta" hidden>
+          <h3 id="t-propuesta">Esto entendí</h3>
+          <p class="ayuda" id="propuesta-respuesta" hidden></p>
+          <ul id="lista-propuesta" class="lista-limpia"></ul>
+          <ul id="lista-dudas" class="lista-limpia"></ul>
+          <button type="button" class="btn btn-primario" data-accion="confirmar" id="btn-confirmar">Aplicar lo marcado</button>
+        </section>
+        <section id="recomendaciones" class="propuesta" aria-labelledby="t-recomendaciones" hidden>
+          <h3 id="t-recomendaciones">Te recomiendo</h3>
+          <div id="lista-recomendaciones" class="recomendaciones"></div>
+        </section>
+        <section id="activos" class="activos" aria-labelledby="t-activos">
+          <h3 id="t-activos">Cambios activos</h3>
+          <p class="ayuda" id="activos-vacio">Todavía no has aplicado cambios.</p>
+          <ul id="lista-activos" class="lista-limpia"></ul>
+        </section>
+        <div class="accordion mt-4" id="acordeon-ia">
+          <div class="accordion-item">
+            <h3 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#ajustes-ia" aria-expanded="false" aria-controls="ajustes-ia">Usar IA con Gemini (opcional)</button></h3>
+            <div id="ajustes-ia" class="accordion-collapse collapse" data-bs-parent="#acordeon-ia">
+              <div class="accordion-body">
+                <p>Todo funciona sin IA. Si quieres respuestas más libres, conecta tu propia clave de Gemini. Es gratis crearla en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>.</p>
+                <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="ia-usar"><label class="form-check-label" for="ia-usar">Usar Gemini para entender lo que escribo</label></div>
+                <label class="form-label" for="ia-clave">Tu clave de Gemini</label>
+                <div class="input-group mb-3">
+                  <input class="form-control" type="password" id="ia-clave" autocomplete="off" spellcheck="false">
+                  <button class="btn btn-secundario" type="button" data-accion="ver-clave" id="btn-ver-clave" aria-pressed="false">Mostrar</button>
+                </div>
+                <label class="form-label" for="ia-modelo">Modelo</label>
+                <select class="form-select mb-3" id="ia-modelo"></select>
+                <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="ia-recordar"><label class="form-check-label" for="ia-recordar">Recordar mi clave en este dispositivo</label></div>
+                <button type="button" class="btn btn-secundario" data-accion="probar-ia" id="btn-probar-ia">Probar conexión</button>
+                <p class="estado" id="estado-ia" role="status"></p>
+                <p class="ayuda">Lo que escribes y tu clave van directo de tu navegador a Google. Este sitio no tiene servidor y no guarda nada. Usa una clave personal y no la compartas.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Guía de consulta -->
+  <div class="offcanvas offcanvas-end panel panel-ancho" tabindex="-1" id="panel-guia" aria-labelledby="t-panel-guia">
+    <div class="offcanvas-header"><h2 class="offcanvas-title" id="t-panel-guia">Guía de consulta</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button></div>
+    <div class="offcanvas-body" id="guia-contenido"></div>
+  </div>
+
+  <!-- Apariencia -->
+  <div class="offcanvas offcanvas-end panel" tabindex="-1" id="panel-apariencia" aria-labelledby="t-panel-apariencia">
+    <div class="offcanvas-header"><h2 class="offcanvas-title" id="t-panel-apariencia">Apariencia y accesibilidad</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button></div>
+    <div class="offcanvas-body">
+      <fieldset class="mb-4"><legend class="form-label">Tema</legend>
+        <div class="segmento" id="pref-tema">
+          <input type="radio" class="btn-check" name="tema" id="tema-auto" value="auto"><label for="tema-auto">Sistema</label>
+          <input type="radio" class="btn-check" name="tema" id="tema-oscuro" value="oscuro"><label for="tema-oscuro">Noche</label>
+          <input type="radio" class="btn-check" name="tema" id="tema-claro" value="claro"><label for="tema-claro">Pergamino</label>
+        </div>
+      </fieldset>
+      <fieldset class="mb-4"><legend class="form-label">Tamaño de la letra</legend>
+        <div class="segmento" id="pref-letra">
+          <input type="radio" class="btn-check" name="letra" id="letra-normal" value="normal"><label for="letra-normal">Normal</label>
+          <input type="radio" class="btn-check" name="letra" id="letra-grande" value="grande"><label for="letra-grande">Grande</label>
+          <input type="radio" class="btn-check" name="letra" id="letra-enorme" value="enorme"><label for="letra-enorme">Muy grande</label>
+        </div>
+      </fieldset>
+      <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="pref-legible"><label class="form-check-label" for="pref-legible">Letra de alta legibilidad</label></div>
+      <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="pref-contraste"><label class="form-check-label" for="pref-contraste">Alto contraste</label></div>
+      <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="pref-movimiento"><label class="form-check-label" for="pref-movimiento">Reducir el movimiento</label></div>
+      <div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" role="switch" id="pref-sonido"><label class="form-check-label" for="pref-sonido">Sonido de los dados</label></div>
+      <div class="form-check form-switch mb-3" id="fila-leer" hidden><input class="form-check-input" type="checkbox" role="switch" id="pref-leer"><label class="form-check-label" for="pref-leer">Leer en voz alta al guía</label></div>
+      <p class="ayuda">Tus preferencias se guardan en este dispositivo.</p>
+    </div>
+  </div>
+
+  <div class="offcanvas offcanvas-bottom panel panel-vivo" tabindex="-1" id="panel-vivo" aria-labelledby="t-panel-vivo">
+    <div class="offcanvas-header"><h2 class="offcanvas-title" id="t-panel-vivo">Tu personaje</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button></div>
+    <div class="offcanvas-body" id="vivo-movil"></div>
+  </div>
+
+  <!-- QR -->
+  <div class="modal fade" id="modal-qr" tabindex="-1" aria-labelledby="t-qr" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header"><h2 class="modal-title" id="t-qr">Llévala a tu celular</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+        <div class="modal-body">
+          <p id="qr-ayuda">Apunta la cámara de tu celular a este código. Se abre tu hoja y desde ahí la descargas.</p>
+          <div class="qr-marco" id="qr-marco" hidden><canvas id="qr-lienzo" role="img" aria-label="Código QR para abrir tu hoja en el celular"></canvas></div>
+          <div id="qr-direccion" hidden>
+            <label class="form-label" for="qr-url">Dirección donde publicaste este sitio</label>
+            <input class="form-control" type="url" id="qr-url" placeholder="https://tu-usuario.github.io/tu-primer-personaje/" inputmode="url">
+            <p class="ayuda mt-2">El QR necesita una dirección de internet que el celular pueda abrir. Este sitio se está viendo desde tu computador. Publícalo gratis en GitHub Pages y escribe aquí la dirección.</p>
+          </div>
+          <p class="estado" id="estado-qr" role="status"></p>
+          <button type="button" class="btn btn-secundario mt-2" data-accion="copiar-enlace" id="btn-copiar" hidden>Copiar enlace</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subir de nivel -->
+  <div class="modal fade" id="modal-nivel" tabindex="-1" aria-labelledby="t-nivel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+      <div class="modal-content">
+        <div class="modal-header"><h2 class="modal-title" id="t-nivel">Subir de nivel</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button></div>
+        <div class="modal-body" id="nivel-contenido"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmación -->
+  <div class="modal fade" id="modal-confirmar" tabindex="-1" aria-labelledby="t-confirmar" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content">
+        <div class="modal-header"><h2 class="modal-title" id="t-confirmar">¿Empezar de nuevo?</h2></div>
+        <div class="modal-body"><p>Se borrará tu personaje de este dispositivo. No se puede deshacer.</p></div>
+        <div class="modal-footer"><button type="button" class="btn btn-secundario" data-bs-dismiss="modal">Conservarlo</button><button type="button" class="btn btn-peligro" data-accion="borrar-todo" data-bs-dismiss="modal">Borrar y empezar</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3" id="tostadas" aria-live="polite"></div>
+
+  <script src="vendor/bootstrap.bundle.min.js" defer></script>
+  <script src="vendor/three-dados.min.js" defer></script>
+  <script src="vendor/jspdf.umd.min.js" defer></script>
+  <script src="vendor/qrcode.js" defer></script>
+  <script src="js/iconos.js" defer></script>
+  <script src="js/datos.js" defer></script>
+  <script src="js/motor.js" defer></script>
+  <script src="js/interprete.js" defer></script>
+  <script src="js/ia.js" defer></script>
+  <script src="js/dados3d.js" defer></script>
+  <script src="js/hoja.js" defer></script>
+  <script src="js/exportar.js" defer></script>
+  <script src="js/pasos.js" defer></script>
+  <script src="js/app.js" defer></script>
+</body>
+</html>
