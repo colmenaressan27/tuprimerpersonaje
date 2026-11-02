@@ -256,8 +256,21 @@
   function vistaEquipo(E) {
     const { pj } = E, c = P.calcular(pj);
     if (!c.clase) return `<h1 class="titulo-paso" tabindex="-1">Tu equipo</h1><p class="sub">Primero elige una clase para ver tu equipo.</p>`;
-    const kit = c.kit;
-    const kits = c.clase.kits.length > 1 ? `<div class="bloque"><h3>Elige tu equipo</h3><div class="opciones anchas" role="radiogroup" aria-label="Equipo">${c.clase.kits.map((k) => opcion({ name: 'kit', value: k.id, checked: kit.id === k.id, t: k.nombre, s: [k.armadura ? P.ARMADURAS[k.armadura].nombre : 'Sin armadura', k.escudo ? 'escudo' : '', k.armas.map((a) => P.ARMAS[a].nombre).join(', ')].filter(Boolean).join(' · ') })).join('')}</div></div>` : '';
+    const arma = (a) => `${a.nombre}: ${a.dado} ${a.tipo}`;
+    const detalleOpcion = (o) => [o.armadura ? `Defensa base ${P.ARMADURAS[o.armadura].base}` : '', o.escudo ? '+2 a tu defensa' : '', ...(o.armas || []).map((id) => arma(P.ARMAS[id]))].filter(Boolean).join(' · ');
+    const ranuras = P.ranurasEquipo(c.clase, pj, c.kit.elegido);
+    const etiquetaRanura = (r) => {
+      if (r.clave.startsWith('fijo.')) return r.titulo;
+      const hermanas = ranuras.filter((x) => x.clave.split('.')[0] === r.clave.split('.')[0]);
+      return hermanas.length > 1 ? 'Elige tu arma ' + (hermanas.indexOf(r) + 1) : 'Elige tu arma';
+    };
+    const selector = (r) => `<div class="mt-2"><label class="form-label" for="ranura-${r.clave.replace('.', '-')}">${esc(etiquetaRanura(r))}</label><select class="form-select" id="ranura-${r.clave.replace('.', '-')}" data-ranura="${r.clave}">${P.armasDe(r.lista).map((a) => `<option value="${a.id}"${(pj.equipoElegido[r.clave] || r.defecto) === a.id ? ' selected' : ''}>${esc(arma(a))}${a.dosManos ? ' · a dos manos' : ''}</option>`).join('')}</select></div>`;
+    const grupos = P.opcionesEquipo(c.clase, pj).map((g) => {
+      const actual = P.opcionElegida(g, c.kit.elegido);
+      return `<div class="bloque"><h3>${esc(g.t)}</h3><div class="opciones anchas" role="radiogroup" aria-label="${esc(g.t)}">${g.op.map((o) => opcion({ name: 'equipo-' + g.id, value: o.id, checked: actual.id === o.id, t: o.t, s: detalleOpcion(o) })).join('')}</div>${ranuras.filter((r) => r.clave.startsWith(g.id + '.')).map(selector).join('')}</div>`;
+    }).join('');
+    const fijas = ranuras.filter((r) => r.clave.startsWith('fijo.'));
+    const kits = `<div class="d-flex flex-wrap gap-2 mt-2"><button type="button" class="btn btn-secundario" data-accion="auto-equipo">Elegir por mí</button></div>${grupos}${fijas.length ? `<div class="bloque">${fijas.map(selector).join('')}</div>` : ''}`;
     const ataques = c.ataques.length ? `<div class="tabla"><table><thead><tr><th>Ataque</th><th>Acertar</th><th>Daño</th></tr></thead><tbody>${c.ataques.map((a) => `<tr><td>${esc(a.nombre)}</td><td>${a.salvacion ? 'CD ' + a.cd : 'd20 ' + P.signo(a.acierta)}</td><td>${a.dado}${a.bonoDano ? ' ' + P.signo(a.bonoDano) : ''} ${esc(a.tipo)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="ayuda">Reparte tus puntuaciones para ver tus ataques.</p>';
     let magia = '';
     if (c.magia) {
@@ -268,7 +281,7 @@
       <button type="button" class="btn btn-secundario mt-2" data-accion="auto-magia">Elegir por mí</button></div>`;
     }
     return `<h1 class="titulo-paso" tabindex="-1">Tu equipo${c.magia ? ' y tu magia' : ''}</h1>
-    <p class="sub">Tu clase te da un equipo inicial. Tu armadura decide tu defensa y tu arma, el daño que haces.</p>
+    <p class="sub">Tu clase te deja elegir tu equipo inicial. Tu armadura decide tu defensa y tu arma, el daño que haces.</p>
     ${kits}
     <div class="detalle"><dl class="datos m-0"><div><dt>Defensa (CA)</dt><dd>${c.ca.valor ?? '–'}</dd></div><div><dt>Cómo se calcula</dt><dd>${esc(c.ca.detalle || 'Reparte tus puntuaciones')}</dd></div><div><dt>Llevas</dt><dd>${esc(c.equipo.slice(0, 5).join(', '))}</dd></div></dl>
     ${c.avisos.map((a) => `<p class="duda mt-2 mb-0">${esc(a)}</p>`).join('')}</div>
@@ -277,7 +290,7 @@
   const guiaEquipo = (E) => {
     const c = P.calcular(E.pj);
     if (!c.clase) return 'Vuelve al paso de clase para ver tu equipo.';
-    return c.magia ? 'La CA es lo que un enemigo debe sacar para golpearte. Ahora elige tus trucos y conjuros: si dudas, pulsa «Elegir por mí».' : 'La CA es lo que un enemigo debe sacar para golpearte. Mira tus ataques: ya están calculados.';
+    return c.magia ? 'Elige tus armas y tu armadura. La CA es lo que un enemigo debe sacar para golpearte. Luego elige tus trucos y conjuros: si dudas, pulsa «Elegir por mí».' : 'Elige tus armas y tu armadura. La CA es lo que un enemigo debe sacar para golpearte y tus ataques ya están calculados.';
   };
 
   /* ---------- Personalidad ---------- */
@@ -289,6 +302,13 @@
     <div class="row g-3">
       <div class="col-md-7"><label class="form-label" for="c-nombre">Nombre del personaje</label><div class="input-group"><input class="form-control" id="c-nombre" data-campo="nombre" maxlength="40" value="${esc(pj.nombre)}" autocomplete="off"><button type="button" class="btn btn-secundario" data-accion="sugerir" data-valor="nombre">Sugerir</button></div></div>
       <div class="col-md-5"><label class="form-label" for="c-jugador">Tu nombre (opcional)</label><input class="form-control" id="c-jugador" data-campo="jugador" maxlength="30" value="${esc(pj.jugador)}" autocomplete="off"></div>
+      <div class="col-12"><div class="retrato-campo">
+        <div class="retrato-vista">${pj.retrato ? `<img src="${pj.retrato}" alt="Imagen de tu personaje">` : ico('pluma')}</div>
+        <div class="retrato-datos"><label class="form-label" for="c-retrato">Imagen de tu personaje (opcional)</label>
+          <p class="ayuda">Si subes una, sale en tu hoja en vez del recuadro para dibujar. Se queda solo en este dispositivo y no viaja en el QR.</p>
+          <input class="form-control" type="file" id="c-retrato" accept="image/*">
+          ${pj.retrato ? '<button type="button" class="btn btn-secundario btn-sm mt-2" data-accion="quitar-retrato">Quitar imagen</button>' : ''}</div>
+      </div></div>
       ${texto('rasgo', 'Cómo me comporto', 'Hablo poco y nunca retrocedo.')}
       ${texto('ideal', 'En qué creo', 'Proteger a los míos.')}
       ${texto('vinculo', 'Qué o a quién protejo', 'Busco a mi hermano perdido.')}
@@ -327,6 +347,58 @@
     <section class="guia-sec"><h3>Tiradas</h3><div class="tabla"><table><thead><tr><th>Quieres</th><th>Tiras</th><th>Debes alcanzar</th></tr></thead><tbody>
       <tr><td>Hacer algo difícil</td><td>d20 + habilidad</td><td>Dificultad (CD)</td></tr><tr><td>Golpear</td><td>d20 + ataque</td><td>CA del enemigo</td></tr><tr><td>Resistir un peligro</td><td>d20 + salvación</td><td>Dificultad (CD)</td></tr></tbody></table></div>
       <p class="mt-2">Dificultad: fácil 10, media 15, difícil 20, muy difícil 25. En un ataque, sacar 20 acierta siempre y tiras el doble de dados de daño. Sacar 1 falla siempre.</p></section>
+    <section class="guia-sec"><h3>Cómo funciona el combate</h3>
+      <p>El combate se juega por rondas. Una ronda son unos 6 segundos dentro del juego: todos actúan una vez, por turnos.</p>
+      <ol>
+        <li><strong>Sorpresa.</strong> El DM decide si alguien no vio venir la pelea. Quien está sorprendido no actúa en la primera ronda.</li>
+        <li><strong>Iniciativa.</strong> Todos tiran d20 + su modificador de Destreza. Se actúa de mayor a menor y ese orden se mantiene toda la pelea.</li>
+        <li><strong>Turnos.</strong> Cuando llega tu número, haces tu turno. Después sigue el siguiente de la lista.</li>
+        <li><strong>Fin.</strong> La pelea sigue hasta que un bando cae, huye o se rinde.</li>
+      </ol></section>
+    <section class="guia-sec"><h3>Qué puedes hacer en tu turno</h3>
+      <div class="tabla"><table><thead><tr><th>Tienes</th><th>Sirve para</th></tr></thead><tbody>
+        <tr><td>Movimiento</td><td>Caminar hasta tu velocidad. Puedes repartirlo antes y después de tu acción.</td></tr>
+        <tr><td>Una acción</td><td>Lo principal de tu turno: atacar, lanzar un conjuro, correr y más.</td></tr>
+        <tr><td>Acción adicional</td><td>Solo si un rasgo o conjuro te la da. No todos tienen una.</td></tr>
+        <tr><td>Una reacción</td><td>Algo que haces fuera de tu turno cuando pasa algo, una vez por ronda.</td></tr>
+        <tr><td>Interactuar</td><td>Un gesto rápido gratis, como desenvainar o abrir una puerta.</td></tr>
+      </tbody></table></div></section>
+    <section class="guia-sec"><h3>Acciones de combate</h3>
+      <div class="tabla"><table><thead><tr><th>Acción</th><th>Qué hace</th></tr></thead><tbody>
+        <tr><td>Atacar</td><td>Un ataque con un arma o sin ella.</td></tr>
+        <tr><td>Lanzar un conjuro</td><td>Usas un conjuro que tarde una acción.</td></tr>
+        <tr><td>Correr</td><td>Te mueves el doble en este turno.</td></tr>
+        <tr><td>Destrabarse</td><td>Tu movimiento no provoca ataques de oportunidad este turno.</td></tr>
+        <tr><td>Esquivar</td><td>Hasta tu próximo turno te atacan con desventaja y tus salvaciones de Destreza van con ventaja.</td></tr>
+        <tr><td>Ayudar</td><td>Un aliado tiene ventaja en su próxima prueba o en su próximo ataque.</td></tr>
+        <tr><td>Esconderse</td><td>Tiras Destreza (Sigilo) para que no te vean.</td></tr>
+        <tr><td>Preparar</td><td>Dejas lista una acción para cuando pase algo concreto.</td></tr>
+        <tr><td>Buscar</td><td>Dedicas el turno a encontrar algo.</td></tr>
+        <tr><td>Usar un objeto</td><td>Usas algo que requiere más que un gesto rápido.</td></tr>
+      </tbody></table></div></section>
+    <section class="guia-sec"><h3>Cómo se resuelve un ataque</h3>
+      <ol>
+        <li>Tira d20 + tu bono de ataque.</li>
+        <li>Si igualas o superas la CA del objetivo, aciertas.</li>
+        <li>Tira el dado de daño y suma tu modificador. Esos puntos se restan de su vida.</li>
+      </ol>
+      <p>Si sacas 20 en el dado, es un crítico: aciertas siempre y tiras el doble de dados de daño. Si sacas 1, fallas siempre.</p>
+      <p>Atacas con desventaja si disparas teniendo un enemigo a tu lado o si el objetivo está más lejos del alcance normal del arma. Si alguien sale de tu alcance sin destrabarse, puedes usar tu reacción para hacerle un ataque de oportunidad.</p>
+      <p><strong>Cobertura:</strong> un obstáculo protege al objetivo. Media cobertura da +2 a su CA y tres cuartos de cobertura, +5. Con cobertura total no se le puede apuntar.</p></section>
+    <section class="guia-sec"><h3>Si llegas a 0 de vida</h3>
+      <p>Caes inconsciente. Al empezar cada turno tiras un d20 sin sumar nada: con 10 o más anotas un éxito y con menos, un fallo.</p>
+      <p>Con 3 éxitos te estabilizas. Con 3 fallos, mueres. Si sacas 20 recuperas 1 punto de vida y despiertas; si sacas 1, cuenta como dos fallos. Recibir daño estando a 0 suma un fallo. Cualquier curación te levanta.</p>
+      <p>Un aliado puede estabilizarte con una acción y una prueba de Sabiduría (Medicina) con dificultad 10.</p></section>
+    <section class="guia-sec"><h3>Un turno de ejemplo</h3>
+      <dl class="dialogo">
+        <div><dt>DM</dt><dd>Es tu turno. El goblin está a 6 metros.</dd></div>
+        <div><dt>Tú</dt><dd>Corro hasta él y le ataco con mi espada.</dd></div>
+        <div><dt>DM</dt><dd>Tira para atacar.</dd></div>
+        <div><dt>Tú</dt><dd>Saqué 12 y tengo +5. Son 17.</dd></div>
+        <div><dt>DM</dt><dd>Su CA es 15, le das. Tira el daño.</dd></div>
+        <div><dt>Tú</dt><dd>1d8 + 3 me da 8.</dd></div>
+        <div><dt>DM</dt><dd>El goblin cae. Sigue el siguiente turno.</dd></div>
+      </dl></section>
     <section class="guia-sec"><h3>Si tu mesa usa la hoja clásica</h3><p>Esta es su forma, con cada casilla en español y en inglés.</p>
       <div class="esquema-hoja" role="img" aria-label="Esquema de la hoja clásica: arriba los datos del personaje, a la izquierda características y habilidades, al centro defensa, vida y ataques, y a la derecha personalidad y rasgos.">
         <div class="ancho"><b>Datos</b> Name, Class &amp; Level, Race, Background</div>

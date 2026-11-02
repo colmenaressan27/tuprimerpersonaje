@@ -80,7 +80,7 @@
 
   // Las páginas, una debajo de la otra: cómodo de leer en el celular
   P.crearJPEG = async function (pj, tema) {
-    await P.hoja.listas();
+    await P.hoja.listas(pj);
     const paginas = P.hoja.paginas(pj, tema).map((pagina) => P.hoja.lienzo(pj, { tema, pagina, escala: 1 }));
     const hueco = 24, cv = document.createElement('canvas');
     cv.width = paginas[0].width; cv.height = paginas.reduce((s, p) => s + p.height + hueco, -hueco);
@@ -91,12 +91,12 @@
   };
 
   P.crearPDF = async function (pj, tema) {
-    await P.hoja.listas();
+    await P.hoja.listas(pj);
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'pt', format: 'letter', compress: true });
     const ancho = doc.internal.pageSize.getWidth(), alto = doc.internal.pageSize.getHeight();
     const k = ancho / P.HOJA_W;
-    doc.setProperties({ title: pj.nombre ? 'Hoja de ' + pj.nombre : 'Hoja de personaje', subject: 'Hoja de personaje de D&D 5.ª edición', creator: 'Tu Primer Personaje', keywords: 'D&D, personaje' });
+    doc.setProperties({ title: pj.nombre ? 'Hoja de ' + pj.nombre : 'Hoja de personaje', subject: 'Hoja de personaje compatible con 5E', creator: 'Tu Primer Personaje', keywords: '5E, personaje' });
     for (const pagina of P.hoja.paginas(pj, tema)) {
       if (pagina > 1) doc.addPage();
       const registro = [];

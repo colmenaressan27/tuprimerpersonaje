@@ -8,7 +8,7 @@
     claseId: null, habClase: [], opcionId: null, pericia: [], metodo: 'matriz', base: vacioCar(null), tiradas: [],
     trasfondoId: null, habExtra: [], kitId: null, trucos: [], conjuros: [],
     alineamiento: '', rasgo: '', ideal: '', vinculo: '', defecto: '', idiomas: '', notas: '',
-    nivel: 1, ganadosPG: [], mejoras: [], px: 0, prioridades: [], concepto: '',
+    nivel: 1, ganadosPG: [], mejoras: [], px: 0, prioridades: [], concepto: '', equipoElegido: {}, retrato: '', retratoMini: '',
   });
 
   P.mod = (s) => Math.floor((s - 10) / 2);
@@ -35,6 +35,39 @@
     if (de && de !== car) nueva[de] = base[car];
     nueva[car] = valor;
     return nueva;
+  };
+
+  /* ---------- Equipo: de las opciones elegidas a lo que lleva el personaje ---------- */
+  const elecciones = (clase, pj) => Object.assign({}, (P.KITS_ANTIGUOS[clase.id] || {})[pj.kitId], pj.equipoElegido);
+  // Grupos de opciones de la clase, sin las que no permite su dominio
+  P.opcionesEquipo = (clase, pj) => clase.equipo.map((g) => Object.assign({}, g, { op: g.op.filter((o) => !o.requiere || o.requiere.includes(pj.opcionId)) }));
+  P.opcionElegida = (grupo, elegido) => grupo.op.find((o) => o.id === elegido[grupo.id]) || grupo.op[0];
+  // Armas libres por elegir con las opciones actuales. La clave identifica cada ranura, como «armas.0».
+  P.ranurasEquipo = function (clase, pj, elegido = elecciones(clase, pj)) {
+    const res = [];
+    const de = (o, id) => (o.elige || []).forEach(([lista, defecto], i) => res.push({ clave: id + '.' + i, lista, defecto, titulo: o.eligeT || o.t }));
+    P.opcionesEquipo(clase, pj).forEach((g) => de(P.opcionElegida(g, elegido), g.id));
+    de(clase.fijo, 'fijo');
+    return res;
+  };
+  P.resolverEquipo = function (clase, pj) {
+    const elegido = elecciones(clase, pj);
+    const kit = { armadura: null, escudo: false, armas: [], otros: [], elegido };
+    const ranuras = P.ranurasEquipo(clase, pj, elegido);
+    const sumar = (o, id) => {
+      if (o.armadura) kit.armadura = o.armadura;
+      if (o.escudo) kit.escudo = true;
+      kit.armas.push(...(o.armas || []));
+      ranuras.filter((r) => r.clave.startsWith(id + '.')).forEach((r) => {
+        const pedida = elegido[r.clave];
+        kit.armas.push(P.armasDe(r.lista).some((a) => a.id === pedida) ? pedida : r.defecto);
+      });
+      kit.otros.push(...(o.otros || []));
+    };
+    P.opcionesEquipo(clase, pj).forEach((g) => sumar(P.opcionElegida(g, elegido), g.id));
+    sumar(clase.fijo, 'fijo');
+    kit.armas = [...new Set(kit.armas)];
+    return kit;
   };
 
   // Cuántos conjuros de nivel 1 elige la clase al crearse
@@ -101,7 +134,7 @@
     }
 
     // Equipo y CA
-    const kit = clase ? (P.buscar(clase.kits, pj.kitId) || clase.kits[0]) : null;
+    const kit = clase ? P.resolverEquipo(clase, pj) : null;
     const armadura = kit && kit.armadura ? P.ARMADURAS[kit.armadura] : null;
     const escudo = !!(kit && kit.escudo);
     const ca = { valor: null, detalle: '' };
@@ -194,7 +227,9 @@
     if (kit) {
       if (armadura) equipo.push(armadura.nombre);
       if (escudo) equipo.push('Escudo');
-      kit.armas.forEach((id) => { const raiz = P.ARMAS[id].nombre.split(' ')[0].toLowerCase(); if (!kit.otros.some((o) => o.toLowerCase().includes(raiz))) equipo.push(P.ARMAS[id].nombre); });
+      // «2 hachas de mano» ya cuenta como hacha de mano: no se lista dos veces
+      const base = (s) => s.toLowerCase().replace(/^\d+ /, '').replace(/s( |$)/g, '$1');
+      kit.armas.forEach((id) => { const n = P.ARMAS[id].nombre; if (!kit.otros.some((o) => base(o) === base(n))) equipo.push(n); });
       equipo.push(...kit.otros);
     }
     if (trasfondo) equipo.push(...trasfondo.equipo);
@@ -239,7 +274,7 @@
   };
 
   // Paquete corto para el enlace del QR: solo decisiones, los números se recalculan al abrir
-  const CAMPOS = ['nombre', 'jugador', 'razaId', 'subrazaId', 'eligeCar', 'habRaza', 'claseId', 'habClase', 'opcionId', 'pericia', 'base', 'trasfondoId', 'habExtra', 'kitId', 'trucos', 'conjuros', 'alineamiento', 'rasgo', 'ideal', 'vinculo', 'defecto', 'idiomas', 'notas', 'nivel', 'ganadosPG', 'mejoras', 'px'];
+  const CAMPOS = ['nombre', 'jugador', 'razaId', 'subrazaId', 'eligeCar', 'habRaza', 'claseId', 'habClase', 'opcionId', 'pericia', 'base', 'trasfondoId', 'habExtra', 'kitId', 'trucos', 'conjuros', 'alineamiento', 'rasgo', 'ideal', 'vinculo', 'defecto', 'idiomas', 'notas', 'nivel', 'ganadosPG', 'mejoras', 'px', 'equipoElegido'];
   P.aPaquete = (pj) => CAMPOS.map((k) => (k === 'base' ? IDS.map((c) => pj.base[c]) : pj[k]));
   P.dePaquete = (lista) => {
     const pj = P.pjVacio();

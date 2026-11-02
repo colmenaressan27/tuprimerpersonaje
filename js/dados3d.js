@@ -231,8 +231,14 @@
     renderer.setSize(r.width, r.height, false);
     camara.aspect = r.width / r.height;
     const distancia = (camara.aspect < 0.8 ? 14 : 10) + Math.max(0, n - 1) * 1.1;
-    camara.position.set(0, distancia, distancia * 0.32);
-    camara.lookAt(0, 0, distancia * 0.13); // sube los dados en pantalla para dejar sitio al resultado
+    if (lienzo.parentElement.classList.contains('con-camara')) {
+      // Sobre la cámara se mira en diagonal, como quien tiene el teléfono en la mano frente a la mesa
+      camara.position.set(0, distancia * 0.9, distancia * 0.5);
+      camara.lookAt(0, 0, 0.4);
+    } else {
+      camara.position.set(0, distancia, distancia * 0.32);
+      camara.lookAt(0, 0, distancia * 0.13); // sube los dados en pantalla para dejar sitio al resultado
+    }
     camara.updateProjectionMatrix();
   }
 
@@ -254,52 +260,62 @@
 
   const facilSalida = (t) => 1 - Math.pow(1 - t, 3);
 
+  // Prepara los dados de un tiro dentro de cualquier escena: la normal o la de la mesa en realidad aumentada
+  function crearTiro(lista, contenedor) {
+    const T = window.THREE, n = lista.length;
+    const columnas = Math.ceil(Math.sqrt(n * 1.6)), sep = 2.5;
+    const filas = Math.ceil(n / columnas);
+    return lista.map((d, i) => {
+      const dado = crearDado(d.lados, d.variante);
+      const c = i % columnas, f = Math.floor(i / columnas);
+      const enFila = f === filas - 1 ? n - columnas * (filas - 1) : columnas;
+      const destino = new T.Vector3((c - (enFila - 1) / 2) * sep + (Math.random() - 0.5) * 0.4, 0, (f - (filas - 1) / 2) * sep + (Math.random() - 0.5) * 0.3);
+      const giroY = (Math.random() - 0.5) * 0.7;
+      const { q, altura } = orientacionFinal(dado, d.caraFinal, giroY);
+      destino.y = altura;
+      const origen = new T.Vector3(-7.5 - Math.random() * 2, 3.4 + Math.random() * 1.6, 5.2 + Math.random() * 1.6);
+      const eje = new T.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+      contenedor.add(dado);
+      return { dado, destino, origen, q, eje, vueltas: 16 + Math.random() * 8, retraso: i * 26, dur: 1250 + Math.random() * 280, botes: [0.34, 0.6, 0.78].map((b) => b + Math.random() * 0.04), sonados: 0 };
+    });
+  }
+
+  // Coloca cada dado en el instante «ahora». Devuelve cuántos siguen en el aire.
+  function moverDados(dados, ahora, inicio) {
+    const T = window.THREE, auxQ = new T.Quaternion();
+    let vivos = 0;
+    dados.forEach((d) => {
+      const t = Math.min(1, Math.max(0, (ahora - inicio - d.retraso) / d.dur));
+      if (t < 1) vivos++;
+      const e = facilSalida(t);
+      d.dado.position.lerpVectors(d.origen, d.destino, e);
+      // Altura: arco inicial y tres botes que se apagan
+      const [b1, b2, b3] = d.botes;
+      let h;
+      if (t < b1) { const u = t / b1; h = (1 - u * u) * d.origen.y * 0.95; }
+      else if (t < b2) { const u = (t - b1) / (b2 - b1); h = 4 * u * (1 - u) * 1.05; }
+      else if (t < b3) { const u = (t - b2) / (b3 - b2); h = 4 * u * (1 - u) * 0.34; }
+      else h = 0;
+      d.dado.position.y = d.destino.y + h;
+      [b1, b2, b3].forEach((b, i) => { if (d.sonados === i && t >= b) { d.sonados++; clac(1 - i * 0.28); } });
+      const angulo = d.vueltas * (1 - facilSalida(Math.min(1, t * 1.02))) ;
+      auxQ.setFromAxisAngle(d.eje, angulo);
+      d.dado.quaternion.copy(d.q).multiply(auxQ);
+    });
+    return vivos;
+  }
+
   function lanzarAnimado(lista) {
-    const T = window.THREE;
     return new Promise((resolver) => {
       const { renderer, escena, camara, brillo } = preparar();
       m3.dados.forEach((d) => escena.remove(d));
-      const n = lista.length;
-      encuadrar(n);
-      const columnas = Math.ceil(Math.sqrt(n * 1.6)), sep = 2.5;
-      const filas = Math.ceil(n / columnas);
-      const dados = lista.map((d, i) => {
-        const dado = crearDado(d.lados, d.variante);
-        const c = i % columnas, f = Math.floor(i / columnas);
-        const enFila = f === filas - 1 ? n - columnas * (filas - 1) : columnas;
-        const destino = new T.Vector3((c - (enFila - 1) / 2) * sep + (Math.random() - 0.5) * 0.4, 0, (f - (filas - 1) / 2) * sep + (Math.random() - 0.5) * 0.3);
-        const giroY = (Math.random() - 0.5) * 0.7;
-        const { q, altura } = orientacionFinal(dado, d.caraFinal, giroY);
-        destino.y = altura;
-        const origen = new T.Vector3(-7.5 - Math.random() * 2, 3.4 + Math.random() * 1.6, 5.2 + Math.random() * 1.6);
-        const eje = new T.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
-        escena.add(dado);
-        return { dado, destino, origen, q, eje, vueltas: 16 + Math.random() * 8, retraso: i * 26, dur: 1250 + Math.random() * 280, botes: [0.34, 0.6, 0.78].map((b) => b + Math.random() * 0.04), sonados: 0 };
-      });
+      encuadrar(lista.length);
+      const dados = crearTiro(lista, escena);
       m3.dados = dados.map((d) => d.dado);
 
       const inicio = performance.now();
-      const auxQ = new T.Quaternion();
       const cuadro = (ahora) => {
-        let vivos = 0;
-        dados.forEach((d) => {
-          const t = Math.min(1, Math.max(0, (ahora - inicio - d.retraso) / d.dur));
-          if (t < 1) vivos++;
-          const e = facilSalida(t);
-          d.dado.position.lerpVectors(d.origen, d.destino, e);
-          // Altura: arco inicial y tres botes que se apagan
-          const [b1, b2, b3] = d.botes;
-          let h;
-          if (t < b1) { const u = t / b1; h = (1 - u * u) * d.origen.y * 0.95; }
-          else if (t < b2) { const u = (t - b1) / (b2 - b1); h = 4 * u * (1 - u) * 1.05; }
-          else if (t < b3) { const u = (t - b2) / (b3 - b2); h = 4 * u * (1 - u) * 0.34; }
-          else h = 0;
-          d.dado.position.y = d.destino.y + h;
-          [b1, b2, b3].forEach((b, i) => { if (d.sonados === i && t >= b) { d.sonados++; clac(1 - i * 0.28); } });
-          const angulo = d.vueltas * (1 - facilSalida(Math.min(1, t * 1.02))) ;
-          auxQ.setFromAxisAngle(d.eje, angulo);
-          d.dado.quaternion.copy(d.q).multiply(auxQ);
-        });
+        const vivos = moverDados(dados, ahora, inicio);
         renderer.render(escena, camara);
         if (vivos) requestAnimationFrame(cuadro);
         else {
@@ -363,6 +379,15 @@
   }
 
   P.dados3d = {
+    // Colores de los próximos dados. Los números se pintan en una textura, así que hay que rehacerlas.
+    colores({ cuerpo, canto, tinta }) {
+      PALETA.cuerpo = parseInt(cuerpo.slice(1), 16);
+      PALETA.canto = parseInt(canto.slice(1), 16);
+      PALETA.tinta = tinta;
+      cacheTextura.forEach((t) => t.dispose());
+      cacheTextura.clear();
+    },
+    xr: { crearTiro, moverDados, expandir, montarEntorno },
     async lanzar(pedido, opciones = {}) {
       const lista = expandir(pedido);
       const valores = pedido.map((_, i) => lista.find((d) => d.idx === i).valor);
@@ -406,7 +431,7 @@
     const violeta = new T.PointLight(0x8f6bff, 9, 14); violeta.position.set(4, -3, 3.5);
     const ambar = new T.PointLight(0xffb45e, 7, 14); ambar.position.set(-4, 3, 3.5);
     escena.add(clave, violeta, ambar);
-    const dado = crearDado(20);
+    let dado = crearDado(20);
     dado.scale.setScalar(1.28);
     escena.add(dado);
     const girar = new T.Euler();
@@ -443,6 +468,13 @@
       empujar() { impulso = 14; pedir(); },
       pausar(v) { activo = !v; if (!v) pedir(); },
       redibujar() { pedir(); },
+      repintar() {
+        escena.remove(dado);
+        dado = crearDado(20);
+        dado.scale.setScalar(1.28);
+        escena.add(dado);
+        pedir();
+      },
     };
   };
 })(window.PJ);

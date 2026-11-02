@@ -1,6 +1,9 @@
 /* Datos del juego. Las reglas están explicadas con palabras propias; ver créditos en README.md. */
 window.PJ = window.PJ || {};
 (function (P) {
+  // Reconocimiento exacto que exige la licencia del SRD 5.1
+  P.ATRIBUCION = 'Esta obra incluye materiales extraídos del Documento de referencia del sistema 5.1 (“SRD 5.1”) de Wizards of the Coast LLC, que está disponible en https://dnd.wizards.com/es/resources/systems-reference-document. SRD 5.1 tiene la licencia Creative Commons Atribución/Reconocimiento 4.0 Licencia Pública Internacional, que está disponible en https://creativecommons.org/licenses/by/4.0/legalcode.es.';
+
   P.CARACT = [
     { id: 'fue', nombre: 'Fuerza', abrev: 'FUE', palabra: 'Músculo', sirve: 'Levantar, empujar y golpear cuerpo a cuerpo.' },
     { id: 'des', nombre: 'Destreza', abrev: 'DES', palabra: 'Agilidad', sirve: 'Esquivar, moverte sin ruido y usar arcos.' },
@@ -65,23 +68,48 @@ window.PJ = window.PJ || {};
     { id: 'tiflin', nombre: 'Tiflin', en: 'tiefling', icono: 'tiflin', frase: 'Con sangre infernal: cuernos, cola y mucha presencia.', bonos: { car: 2, int: 1 }, velocidad: 9, idiomas: ['Común', 'Infernal'], rasgos: [VISION, { n: 'Resistencia infernal', d: 'Recibes la mitad del daño de fuego.' }, { n: 'Legado infernal', d: 'Sabes el truco Taumaturgia. Ganas más magia en niveles 3 y 5.' }], buenas: 'Brujo, Bardo, Hechicero, Paladín' },
   ];
 
+  /* cat: s = sencilla, m = marcial. La cerbatana y la red quedan fuera: no tienen un dado de daño que tirar. */
   P.ARMAS = {
-    daga: { nombre: 'Daga', dado: '1d4', tipo: 'perforante', sutil: true, lanzar: '6/18 m' },
-    dardo: { nombre: 'Dardo', dado: '1d4', tipo: 'perforante', sutil: true, lanzar: '6/18 m' },
-    baston: { nombre: 'Bastón', dado: '1d6', tipo: 'contundente', nota: '1d8 a dos manos' },
-    maza: { nombre: 'Maza', dado: '1d6', tipo: 'contundente' },
-    'hacha-mano': { nombre: 'Hacha de mano', dado: '1d6', tipo: 'cortante', lanzar: '6/18 m' },
-    jabalina: { nombre: 'Jabalina', dado: '1d6', tipo: 'perforante', lanzar: '9/36 m' },
-    'espada-corta': { nombre: 'Espada corta', dado: '1d6', tipo: 'perforante', sutil: true },
-    cimitarra: { nombre: 'Cimitarra', dado: '1d6', tipo: 'cortante', sutil: true },
-    estoque: { nombre: 'Estoque', dado: '1d8', tipo: 'perforante', sutil: true },
-    'espada-larga': { nombre: 'Espada larga', dado: '1d8', tipo: 'cortante', nota: '1d10 a dos manos' },
-    'gran-hacha': { nombre: 'Gran hacha', dado: '1d12', tipo: 'cortante', dosManos: true },
-    mandoble: { nombre: 'Mandoble', dado: '2d6', tipo: 'cortante', dosManos: true },
-    'arco-corto': { nombre: 'Arco corto', dado: '1d6', tipo: 'perforante', distancia: '24/96 m', dosManos: true },
-    'arco-largo': { nombre: 'Arco largo', dado: '1d8', tipo: 'perforante', distancia: '45/180 m', dosManos: true },
-    'ballesta-ligera': { nombre: 'Ballesta ligera', dado: '1d8', tipo: 'perforante', distancia: '24/96 m', dosManos: true },
+    baston: { nombre: 'Bastón', cat: 's', dado: '1d6', tipo: 'contundente', nota: '1d8 a dos manos' },
+    daga: { nombre: 'Daga', cat: 's', dado: '1d4', tipo: 'perforante', sutil: true, lanzar: '6/18 m' },
+    garrote: { nombre: 'Garrote', cat: 's', dado: '1d4', tipo: 'contundente' },
+    'garrote-grande': { nombre: 'Garrote grande', cat: 's', dado: '1d8', tipo: 'contundente', dosManos: true },
+    'hacha-mano': { nombre: 'Hacha de mano', cat: 's', dado: '1d6', tipo: 'cortante', lanzar: '6/18 m' },
+    hoz: { nombre: 'Hoz', cat: 's', dado: '1d4', tipo: 'cortante' },
+    jabalina: { nombre: 'Jabalina', cat: 's', dado: '1d6', tipo: 'perforante', lanzar: '9/36 m' },
+    lanza: { nombre: 'Lanza', cat: 's', dado: '1d6', tipo: 'perforante', lanzar: '6/18 m', nota: '1d8 a dos manos' },
+    'martillo-ligero': { nombre: 'Martillo ligero', cat: 's', dado: '1d4', tipo: 'contundente', lanzar: '6/18 m' },
+    maza: { nombre: 'Maza', cat: 's', dado: '1d6', tipo: 'contundente' },
+    'arco-corto': { nombre: 'Arco corto', cat: 's', dado: '1d6', tipo: 'perforante', distancia: '24/96 m', dosManos: true },
+    'ballesta-ligera': { nombre: 'Ballesta ligera', cat: 's', dado: '1d8', tipo: 'perforante', distancia: '24/96 m', dosManos: true },
+    dardo: { nombre: 'Dardo', cat: 's', dado: '1d4', tipo: 'perforante', sutil: true, lanzar: '6/18 m' },
+    honda: { nombre: 'Honda', cat: 's', dado: '1d4', tipo: 'contundente', distancia: '9/36 m' },
+    alabarda: { nombre: 'Alabarda', cat: 'm', dado: '1d10', tipo: 'cortante', dosManos: true },
+    cimitarra: { nombre: 'Cimitarra', cat: 'm', dado: '1d6', tipo: 'cortante', sutil: true },
+    'espada-corta': { nombre: 'Espada corta', cat: 'm', dado: '1d6', tipo: 'perforante', sutil: true },
+    'espada-larga': { nombre: 'Espada larga', cat: 'm', dado: '1d8', tipo: 'cortante', nota: '1d10 a dos manos' },
+    mandoble: { nombre: 'Espadón', cat: 'm', dado: '2d6', tipo: 'cortante', dosManos: true },
+    estoque: { nombre: 'Estoque', cat: 'm', dado: '1d8', tipo: 'perforante', sutil: true },
+    guja: { nombre: 'Guja', cat: 'm', dado: '1d10', tipo: 'cortante', dosManos: true },
+    'gran-hacha': { nombre: 'Hacha a dos manos', cat: 'm', dado: '1d12', tipo: 'cortante', dosManos: true },
+    'hacha-guerra': { nombre: 'Hacha de guerra', cat: 'm', dado: '1d8', tipo: 'cortante', nota: '1d10 a dos manos' },
+    'lanza-caballeria': { nombre: 'Lanza de caballería', cat: 'm', dado: '1d12', tipo: 'perforante' },
+    latigo: { nombre: 'Látigo', cat: 'm', dado: '1d4', tipo: 'cortante', sutil: true },
+    lucero: { nombre: 'Lucero del alba', cat: 'm', dado: '1d8', tipo: 'perforante' },
+    mangual: { nombre: 'Mangual', cat: 'm', dado: '1d8', tipo: 'contundente' },
+    'martillo-guerra': { nombre: 'Martillo de guerra', cat: 'm', dado: '1d8', tipo: 'contundente', nota: '1d10 a dos manos' },
+    'maza-grande': { nombre: 'Maza a dos manos', cat: 'm', dado: '2d6', tipo: 'contundente', dosManos: true },
+    pica: { nombre: 'Pica', cat: 'm', dado: '1d10', tipo: 'perforante', dosManos: true },
+    'pico-guerra': { nombre: 'Pico de guerra', cat: 'm', dado: '1d8', tipo: 'perforante' },
+    tridente: { nombre: 'Tridente', cat: 'm', dado: '1d6', tipo: 'perforante', lanzar: '6/18 m', nota: '1d8 a dos manos' },
+    'arco-largo': { nombre: 'Arco largo', cat: 'm', dado: '1d8', tipo: 'perforante', distancia: '45/180 m', dosManos: true },
+    'ballesta-mano': { nombre: 'Ballesta de mano', cat: 'm', dado: '1d6', tipo: 'perforante', distancia: '9/36 m' },
+    'ballesta-pesada': { nombre: 'Ballesta pesada', cat: 'm', dado: '1d10', tipo: 'perforante', distancia: '30/120 m', dosManos: true },
   };
+
+  P.armasDe = (lista) => Object.entries(P.ARMAS).map(([id, a]) => Object.assign({ id }, a)).filter((a) => ({
+    sencilla: a.cat === 's', 'sencilla-cc': a.cat === 's' && !a.distancia, marcial: a.cat === 'm', 'marcial-cc': a.cat === 'm' && !a.distancia, 'marcial-una': a.cat === 'm' && !a.dosManos,
+  })[lista]).sort((x, y) => x.nombre.localeCompare(y.nombre, 'es'));
 
   P.ARMADURAS = {
     cuero: { nombre: 'Armadura de cuero', base: 11 },
@@ -89,66 +117,143 @@ window.PJ = window.PJ || {};
     malla: { nombre: 'Cota de malla', base: 16, desMax: 0, fue: 13 },
   };
 
+  /* Equipo inicial: las opciones (a), (b) y (c) de cada clase en el SRD.
+     elige: ranuras de arma libre, cada una con [lista de P.armasDe, arma por defecto]. requiere: opciones de clase que la permiten. */
+  const PAQUETE = { mazmorras: 'Paquete de explorador de mazmorras', explorador: 'Paquete de explorador', erudito: 'Paquete de erudito', sacerdote: 'Paquete de sacerdote', diplomatico: 'Paquete de diplomático', artista: 'Paquete de artista', ladron: 'Paquete de ladrón' };
+  const letra = (i) => 'abc'[i];
+  const paquetes = (...k) => ({ id: 'paquete', t: 'Tu paquete de viaje', op: k.map((x, i) => ({ id: letra(i), t: PAQUETE[x], otros: [PAQUETE[x]] })) });
+  const objetos = (id, t, nombres) => ({ id, t, op: nombres.map((n, i) => ({ id: letra(i), t: n, otros: [n] })) });
+  const arma = (id, t, armaId) => ({ id, t, armas: [armaId] });
+  const libre = (id, t, lista, defecto) => ({ id, t, elige: [[lista, defecto]] });
+  const BALLESTA = { id: 'a', t: 'Ballesta ligera y 20 virotes', armas: ['ballesta-ligera'], otros: ['20 virotes'] };
+  const SENCILLA = (id = 'b', defecto = 'baston') => libre(id, 'Un arma sencilla a tu elección', 'sencilla', defecto);
+  const FOCO = objetos('foco', 'Tu foco de magia', ['Saquito de componentes', 'Canalizador arcano']);
+  const MARCIALES = { id: 'armas', t: 'Tus armas', op: [
+    { id: 'a', t: 'Un arma marcial y un escudo', escudo: true, elige: [['marcial-una', 'espada-larga']] },
+    { id: 'b', t: 'Dos armas marciales', elige: [['marcial', 'mandoble'], ['marcial', 'espada-larga']] },
+  ] };
+  // Partidas y enlaces QR creados cuando el equipo eran paquetes cerrados
+  P.KITS_ANTIGUOS = { guerrero: { grande: { armas: 'b' }, arco: { armadura: 'b' } }, explorador: { arco: { armadura: 'b' } }, paladin: { grande: { armas: 'b' } } };
+
   P.CLASES = [
     { id: 'barbaro', nombre: 'Bárbaro', icono: 'barbaro', color: '#E0523A', d: 12, dif: 1, tags: ['pegar', 'aguantar'], frase: 'Entra en furia, pega durísimo y aguanta más que nadie.', clave: 'Fuerza', salv: ['fue', 'con'], armadura: 'Ligera, media y escudo', nHab: 2, hab: ['atletismo', 'intimidacion', 'naturaleza', 'percepcion', 'supervivencia', 'animales'], reparto: { fue: 15, con: 14, des: 13, sab: 12, car: 10, int: 8 },
       rasgos: [{ n: 'Furia', d: '2 veces por descanso largo: +2 al daño cuerpo a cuerpo y mitad del daño físico.' }, { n: 'Defensa sin armadura', d: 'Sin armadura, tu CA es 10 + DES + CON.' }],
-      kits: [{ id: 'a', nombre: 'Arma a dos manos', armas: ['gran-hacha', 'hacha-mano', 'jabalina'], otros: ['2 hachas de mano', '4 jabalinas', 'Paquete de explorador'] }],
+      equipo: [
+        { id: 'principal', t: 'Tu arma principal', op: [arma('a', 'Hacha a dos manos', 'gran-hacha'), libre('b', 'Un arma marcial cuerpo a cuerpo a tu elección', 'marcial-cc', 'gran-hacha')] },
+        { id: 'segunda', t: 'Tu segunda arma', op: [{ id: 'a', t: 'Dos hachas de mano', armas: ['hacha-mano'], otros: ['2 hachas de mano'] }, SENCILLA()] },
+      ],
+      fijo: { armas: ['jabalina'], otros: ['4 jabalinas', PAQUETE.explorador] },
       progreso: ['Ataque temerario, Sentido del peligro', 'Elige su senda', 'Mejora de característica', 'Ataque adicional, más velocidad'] },
     { id: 'bardo', nombre: 'Bardo', icono: 'bardo', color: '#E06BA8', d: 8, dif: 3, tags: ['magia', 'curar', 'hablar'], frase: 'Músico mágico. Anima al grupo, encanta enemigos y sabe de todo.', clave: 'Carisma', salv: ['des', 'car'], armadura: 'Ligera', nHab: 3, hab: 'todas', reparto: { car: 15, des: 14, con: 13, sab: 12, int: 10, fue: 8 },
       rasgos: [{ n: 'Inspiración bárdica', d: 'Das un d6 extra a un aliado. Usos: tu mod. de CAR por descanso largo.' }],
       magia: { car: 'car', trucos: 2, conocidos: 4, tipo: 'completo' },
-      kits: [{ id: 'a', nombre: 'Equipo del bardo', armadura: 'cuero', armas: ['estoque', 'daga'], otros: ['Laúd', 'Paquete de artista'] }],
+      equipo: [
+        { id: 'arma', t: 'Tu arma', op: [arma('a', 'Estoque', 'estoque'), arma('b', 'Espada larga', 'espada-larga'), SENCILLA('c')] },
+        paquetes('diplomatico', 'artista'),
+        objetos('instrumento', 'Tu instrumento', ['Laúd', 'Otro instrumento musical']),
+      ],
+      fijo: { armadura: 'cuero', armas: ['daga'] },
       progreso: ['Aprendiz de todo, Canción de descanso', 'Elige su colegio, Pericia', 'Mejora de característica', 'Inspiración d8, conjuros de nivel 3'] },
     { id: 'brujo', nombre: 'Brujo', icono: 'brujo', color: '#9B72F2', d: 8, dif: 2, tags: ['magia', 'hablar'], frase: 'Hizo un pacto con un ser poderoso a cambio de magia.', clave: 'Carisma', salv: ['sab', 'car'], armadura: 'Ligera', nHab: 2, hab: ['arcano', 'engano', 'historia', 'intimidacion', 'investigacion', 'naturaleza', 'religion'], reparto: { car: 15, con: 14, des: 13, sab: 12, int: 10, fue: 8 },
       rasgos: [{ n: 'Magia de pacto', d: 'Tu espacio de conjuro vuelve con un descanso corto.' }],
       opcion: { titulo: 'Tu patrón', ayuda: '¿Quién te dio tu poder?', lista: [{ id: 'infernal', nombre: 'Infernal', d: 'Un ser de los infiernos. Magia de fuego.' }, { id: 'feerico', nombre: 'Archifeérico', d: 'Un noble de las hadas. Magia de encanto.' }, { id: 'primigenio', nombre: 'Primigenio', d: 'Una entidad antigua. Magia de la mente.' }] },
       magia: { car: 'car', trucos: 2, conocidos: 2, tipo: 'pacto' },
-      kits: [{ id: 'a', nombre: 'Equipo del brujo', armadura: 'cuero', armas: ['ballesta-ligera', 'daga'], otros: ['Foco arcano', '2 dagas', '20 virotes', 'Paquete de erudito'] }],
+      equipo: [
+        { id: 'arma', t: 'Tu arma', op: [BALLESTA, SENCILLA()] },
+        FOCO,
+        paquetes('erudito', 'mazmorras'),
+      ],
+      fijo: { armadura: 'cuero', armas: ['daga'], otros: ['2 dagas'], elige: [['sencilla', 'baston']], eligeT: 'Además llevas un arma sencilla a tu elección' },
       progreso: ['Invocaciones sobrenaturales', 'Don del pacto', 'Mejora de característica', 'Conjuros de nivel 3'] },
     { id: 'clerigo', nombre: 'Clérigo', icono: 'clerigo', color: '#E6BE4F', d: 8, dif: 2, tags: ['magia', 'curar', 'aguantar'], frase: 'Su fe le da magia. Cura, protege y golpea.', clave: 'Sabiduría', salv: ['sab', 'car'], armadura: 'Ligera, media y escudo', nHab: 2, hab: ['historia', 'medicina', 'perspicacia', 'persuasion', 'religion'], reparto: { sab: 15, con: 14, fue: 13, car: 12, des: 10, int: 8 },
       rasgos: [],
       opcion: { titulo: 'Tu dominio divino', ayuda: '¿Qué aspecto de tu dios te guía?', lista: [{ id: 'vida', nombre: 'Vida', d: 'Tus curaciones sanan más.' }, { id: 'luz', nombre: 'Luz', d: 'Tu fe quema con fuego sagrado.' }, { id: 'guerra', nombre: 'Guerra', d: 'Tu fe te guía en el combate.' }] },
       magia: { car: 'sab', trucos: 3, prepara: true, tipo: 'completo' },
-      kits: [{ id: 'a', nombre: 'Equipo del clérigo', armadura: 'escamas', escudo: true, armas: ['maza', 'ballesta-ligera'], otros: ['Símbolo sagrado', '20 virotes', 'Paquete de sacerdote'] }],
+      equipo: [
+        { id: 'arma', t: 'Tu arma', op: [arma('a', 'Maza', 'maza'), Object.assign(arma('b', 'Martillo de guerra', 'martillo-guerra'), { requiere: ['guerra'] })] },
+        { id: 'armadura', t: 'Tu armadura', op: [{ id: 'a', t: 'Cota de escamas', armadura: 'escamas' }, { id: 'b', t: 'Armadura de cuero', armadura: 'cuero' }, { id: 'c', t: 'Cota de malla', armadura: 'malla', requiere: ['vida', 'guerra'] }] },
+        { id: 'lejos', t: 'Tu segunda arma', op: [BALLESTA, SENCILLA()] },
+        paquetes('sacerdote', 'explorador'),
+      ],
+      fijo: { escudo: true, otros: ['Símbolo sagrado'] },
       progreso: ['Canalizar divinidad', 'Conjuros de nivel 2', 'Mejora de característica', 'Destruir muertos vivientes, conjuros de nivel 3'] },
     { id: 'druida', nombre: 'Druida', icono: 'druida', color: '#57B878', d: 8, dif: 3, tags: ['magia', 'curar', 'naturaleza'], frase: 'Guardián de la naturaleza. Lanza magia y se convierte en animales.', clave: 'Sabiduría', salv: ['int', 'sab'], armadura: 'Ligera, media y escudo, sin metal', nHab: 2, hab: ['arcano', 'medicina', 'naturaleza', 'percepcion', 'perspicacia', 'religion', 'supervivencia', 'animales'], reparto: { sab: 15, con: 14, des: 13, int: 12, car: 10, fue: 8 },
       rasgos: [{ n: 'Druídico', d: 'Hablas el idioma secreto de los druidas.' }],
       magia: { car: 'sab', trucos: 2, prepara: true, tipo: 'completo' },
-      kits: [{ id: 'a', nombre: 'Equipo del druida', armadura: 'cuero', escudo: true, armas: ['cimitarra'], otros: ['Foco druídico', 'Escudo de madera', 'Paquete de explorador'] }],
+      equipo: [
+        { id: 'defensa', t: 'Tu defensa', op: [{ id: 'a', t: 'Escudo de madera', escudo: true }, SENCILLA()] },
+        { id: 'arma', t: 'Tu arma', op: [arma('a', 'Cimitarra', 'cimitarra'), libre('b', 'Un arma sencilla cuerpo a cuerpo a tu elección', 'sencilla-cc', 'baston')] },
+      ],
+      fijo: { armadura: 'cuero', otros: [PAQUETE.explorador, 'Canalizador druídico'] },
       progreso: ['Forma salvaje, elige su círculo', 'Conjuros de nivel 2', 'Mejora de característica, mejor forma salvaje', 'Conjuros de nivel 3'] },
     { id: 'explorador', nombre: 'Explorador', icono: 'explorador', color: '#3FB6A2', d: 10, dif: 2, tags: ['sombras', 'pegar', 'naturaleza', 'distancia'], frase: 'Cazador de las tierras salvajes. Rastrea, sobrevive y dispara.', clave: 'Destreza y Sabiduría', salv: ['fue', 'des'], armadura: 'Ligera, media y escudo', nHab: 3, hab: ['atletismo', 'investigacion', 'naturaleza', 'percepcion', 'perspicacia', 'sigilo', 'supervivencia', 'animales'], reparto: { des: 15, sab: 14, con: 13, fue: 12, int: 10, car: 8 },
       rasgos: [{ n: 'Enemigo predilecto', d: 'Eliges un tipo de criatura y aprendes a rastrearla.' }, { n: 'Explorador nato', d: 'Te orientas mejor en un tipo de terreno.' }],
       magia: { car: 'sab', desdeNivel: 2, tipo: 'medio' },
-      kits: [{ id: 'arco', nombre: 'Ligero con arco', armadura: 'cuero', armas: ['arco-largo', 'espada-corta'], otros: ['2 espadas cortas', '20 flechas', 'Paquete de explorador'] }, { id: 'escamas', nombre: 'Mejor protegido', armadura: 'escamas', armas: ['arco-largo', 'espada-corta'], otros: ['2 espadas cortas', '20 flechas', 'Paquete de explorador'] }],
+      equipo: [
+        { id: 'armadura', t: 'Tu armadura', op: [{ id: 'a', t: 'Cota de escamas', armadura: 'escamas' }, { id: 'b', t: 'Armadura de cuero', armadura: 'cuero' }] },
+        { id: 'arma', t: 'Tus armas', op: [{ id: 'a', t: 'Dos espadas cortas', armas: ['espada-corta'], otros: ['2 espadas cortas'] }, { id: 'b', t: 'Dos armas sencillas cuerpo a cuerpo', elige: [['sencilla-cc', 'hacha-mano'], ['sencilla-cc', 'daga']] }] },
+        paquetes('mazmorras', 'explorador'),
+      ],
+      fijo: { armas: ['arco-largo'], otros: ['Aljaba con 20 flechas'] },
       progreso: ['Estilo de combate, Conjuros', 'Elige su arquetipo, Consciencia primigenia', 'Mejora de característica', 'Ataque adicional'] },
     { id: 'guerrero', nombre: 'Guerrero', icono: 'guerrero', color: '#8CA3C2', d: 10, dif: 1, tags: ['pegar', 'aguantar', 'distancia'], frase: 'Experto en armas y armaduras. La clase más directa para aprender.', clave: 'Fuerza o Destreza', salv: ['fue', 'con'], armadura: 'Todas y escudo', nHab: 2, hab: ['acrobacias', 'atletismo', 'historia', 'intimidacion', 'percepcion', 'perspicacia', 'supervivencia', 'animales'], reparto: { fue: 15, con: 14, des: 13, sab: 12, car: 10, int: 8 },
       rasgos: [{ n: 'Tomar aliento', d: 'Una vez por descanso, te curas 1d10 + tu nivel.' }],
       opcion: { titulo: 'Tu estilo de combate', ayuda: '¿Cómo te gusta pelear?', lista: [{ id: 'defensa', nombre: 'Defensa', d: '+1 a tu CA mientras lleves armadura.' }, { id: 'duelo', nombre: 'Duelo', d: '+2 al daño con un arma a una mano.' }, { id: 'arqueria', nombre: 'Arquería', d: '+2 para acertar con armas a distancia.' }, { id: 'grande', nombre: 'Arma grande', d: 'Repites los 1 y 2 de daño con armas a dos manos.' }] },
-      kits: [{ id: 'escudo', nombre: 'Espada y escudo', armadura: 'malla', escudo: true, armas: ['espada-larga', 'hacha-mano'], otros: ['2 hachas de mano', 'Paquete de explorador de mazmorras'] }, { id: 'grande', nombre: 'Arma a dos manos', armadura: 'malla', armas: ['mandoble', 'hacha-mano'], otros: ['2 hachas de mano', 'Paquete de explorador de mazmorras'] }, { id: 'arco', nombre: 'Arquero', armadura: 'cuero', armas: ['arco-largo', 'espada-larga'], otros: ['20 flechas', 'Escudo', 'Paquete de explorador'] }],
+      equipo: [
+        { id: 'armadura', t: 'Tu armadura', op: [{ id: 'a', t: 'Cota de malla', armadura: 'malla' }, { id: 'b', t: 'Armadura de cuero, arco largo y 20 flechas', armadura: 'cuero', armas: ['arco-largo'], otros: ['20 flechas'] }] },
+        MARCIALES,
+        { id: 'lejos', t: 'Tu arma para atacar de lejos', op: [BALLESTA, { id: 'b', t: 'Dos hachas de mano', armas: ['hacha-mano'], otros: ['2 hachas de mano'] }] },
+        paquetes('mazmorras', 'explorador'),
+      ],
+      fijo: {},
       progreso: ['Acción súbita', 'Elige su arquetipo', 'Mejora de característica', 'Ataque adicional'] },
     { id: 'hechicero', nombre: 'Hechicero', icono: 'hechicero', color: '#EE7A45', d: 6, dif: 3, tags: ['magia', 'hablar', 'fuego'], frase: 'Nació con magia en la sangre. Sabe pocos conjuros, pero los moldea.', clave: 'Carisma', salv: ['con', 'car'], armadura: 'Ninguna', nHab: 2, hab: ['arcano', 'engano', 'intimidacion', 'perspicacia', 'persuasion', 'religion'], reparto: { car: 15, con: 14, des: 13, sab: 12, int: 10, fue: 8 },
       rasgos: [],
       opcion: { titulo: 'Tu origen mágico', ayuda: '¿De dónde viene tu poder?', lista: [{ id: 'draconico', nombre: 'Linaje dracónico', d: 'CA 13 + DES sin armadura y +1 de vida por nivel.' }, { id: 'salvaje', nombre: 'Magia salvaje', d: 'Tu magia es impredecible y sorprendente.' }] },
       magia: { car: 'car', trucos: 4, conocidos: 2, tipo: 'completo' },
-      kits: [{ id: 'a', nombre: 'Equipo del hechicero', armas: ['ballesta-ligera', 'daga'], otros: ['Foco arcano', '2 dagas', '20 virotes', 'Paquete de explorador de mazmorras'] }],
+      equipo: [
+        { id: 'arma', t: 'Tu arma', op: [BALLESTA, SENCILLA()] },
+        FOCO,
+        paquetes('mazmorras', 'explorador'),
+      ],
+      fijo: { armas: ['daga'], otros: ['2 dagas'] },
       progreso: ['Puntos de hechicería', 'Metamagia', 'Mejora de característica', 'Conjuros de nivel 3'] },
     { id: 'mago', nombre: 'Mago', icono: 'mago', color: '#5F93F5', d: 6, dif: 3, tags: ['magia', 'estudio'], frase: 'Estudia magia en un libro. Tiene la lista de conjuros más grande.', clave: 'Inteligencia', salv: ['int', 'sab'], armadura: 'Ninguna', nHab: 2, hab: ['arcano', 'historia', 'investigacion', 'medicina', 'perspicacia', 'religion'], reparto: { int: 15, con: 14, des: 13, sab: 12, car: 10, fue: 8 },
       rasgos: [{ n: 'Recuperación arcana', d: 'Una vez al día recuperas un espacio en un descanso corto.' }],
       magia: { car: 'int', trucos: 3, conocidos: 6, libro: true, tipo: 'completo' },
-      kits: [{ id: 'a', nombre: 'Equipo del mago', armas: ['baston'], otros: ['Foco arcano', 'Libro de conjuros', 'Paquete de erudito'] }],
+      equipo: [
+        { id: 'arma', t: 'Tu arma', op: [arma('a', 'Bastón', 'baston'), arma('b', 'Daga', 'daga')] },
+        FOCO,
+        paquetes('erudito', 'explorador'),
+      ],
+      fijo: { otros: ['Libro de conjuros'] },
       progreso: ['Elige su tradición arcana', 'Conjuros de nivel 2', 'Mejora de característica', 'Conjuros de nivel 3'] },
     { id: 'monje', nombre: 'Monje', icono: 'monje', color: '#3CBAD0', d: 8, dif: 2, tags: ['sombras', 'pegar'], frase: 'Artista marcial rápido. Pelea con los puños y esquiva casi todo.', clave: 'Destreza y Sabiduría', salv: ['fue', 'des'], armadura: 'Ninguna', nHab: 2, hab: ['acrobacias', 'atletismo', 'historia', 'perspicacia', 'religion', 'sigilo'], reparto: { des: 15, sab: 14, con: 13, fue: 12, int: 10, car: 8 },
       rasgos: [{ n: 'Artes marciales', d: 'Tus puños hacen 1d4 y puedes golpear de nuevo como acción adicional.' }, { n: 'Defensa sin armadura', d: 'Sin armadura ni escudo, tu CA es 10 + DES + SAB.' }],
-      kits: [{ id: 'a', nombre: 'Equipo del monje', armas: ['espada-corta', 'dardo'], otros: ['10 dardos', 'Paquete de explorador'] }],
+      equipo: [
+        { id: 'arma', t: 'Tu arma', op: [arma('a', 'Espada corta', 'espada-corta'), SENCILLA()] },
+        paquetes('mazmorras', 'explorador'),
+      ],
+      fijo: { armas: ['dardo'], otros: ['10 dardos'] },
       progreso: ['Ki, más velocidad', 'Elige su tradición, Desviar proyectiles', 'Mejora de característica, Caída lenta', 'Ataque adicional, Golpe aturdidor'] },
     { id: 'paladin', nombre: 'Paladín', icono: 'paladin', color: '#EDBB3F', d: 10, dif: 2, tags: ['pegar', 'aguantar', 'curar', 'hablar'], frase: 'Guerrero sagrado unido a un juramento. Pega fuerte y cura con las manos.', clave: 'Fuerza y Carisma', salv: ['sab', 'car'], armadura: 'Todas y escudo', nHab: 2, hab: ['atletismo', 'intimidacion', 'medicina', 'perspicacia', 'persuasion', 'religion'], reparto: { fue: 15, car: 14, con: 13, sab: 12, des: 10, int: 8 },
       rasgos: [{ n: 'Sentido divino', d: 'Percibes criaturas celestiales, infernales y no muertos.' }, { n: 'Imposición de manos', d: 'Curas al tocar. Tienes nivel × 5 puntos por descanso largo.' }],
       magia: { car: 'car', desdeNivel: 2, tipo: 'medio' },
-      kits: [{ id: 'escudo', nombre: 'Espada y escudo', armadura: 'malla', escudo: true, armas: ['espada-larga', 'jabalina'], otros: ['5 jabalinas', 'Símbolo sagrado', 'Paquete de explorador'] }, { id: 'grande', nombre: 'Arma a dos manos', armadura: 'malla', armas: ['mandoble', 'jabalina'], otros: ['5 jabalinas', 'Símbolo sagrado', 'Paquete de explorador'] }],
+      equipo: [
+        MARCIALES,
+        { id: 'lejos', t: 'Tu segunda opción de ataque', op: [{ id: 'a', t: 'Cinco jabalinas', armas: ['jabalina'], otros: ['5 jabalinas'] }, libre('b', 'Un arma sencilla cuerpo a cuerpo a tu elección', 'sencilla-cc', 'maza')] },
+        paquetes('sacerdote', 'explorador'),
+      ],
+      fijo: { armadura: 'malla', otros: ['Símbolo sagrado'] },
       progreso: ['Estilo de combate, Conjuros, Castigo divino', 'Salud divina, elige su juramento', 'Mejora de característica', 'Ataque adicional'] },
     { id: 'picaro', nombre: 'Pícaro', icono: 'picaro', color: '#A8ADB8', d: 8, dif: 1, tags: ['sombras', 'hablar'], frase: 'Especialista en sigilo, trampas y ataques por sorpresa.', clave: 'Destreza', salv: ['des', 'int'], armadura: 'Ligera', nHab: 4, hab: ['acrobacias', 'atletismo', 'engano', 'interpretacion', 'intimidacion', 'investigacion', 'manos', 'percepcion', 'perspicacia', 'persuasion', 'sigilo'], pericia: 2, reparto: { des: 15, con: 14, sab: 13, car: 12, int: 10, fue: 8 },
       rasgos: [{ n: 'Pericia', d: 'Duplicas tu bono de competencia en 2 habilidades.' }, { n: 'Ataque furtivo', d: 'Una vez por turno, 1d6 de daño extra si tienes ventaja o un aliado cerca.' }, { n: 'Jerga de ladrones', d: 'Hablas el código secreto de los pícaros.' }],
-      kits: [{ id: 'a', nombre: 'Equipo del pícaro', armadura: 'cuero', armas: ['estoque', 'arco-corto', 'daga'], otros: ['2 dagas', '20 flechas', 'Herramientas de ladrón', 'Paquete de ladrón'] }],
+      equipo: [
+        { id: 'arma', t: 'Tu arma', op: [arma('a', 'Estoque', 'estoque'), arma('b', 'Espada corta', 'espada-corta')] },
+        { id: 'segunda', t: 'Tu segunda arma', op: [{ id: 'a', t: 'Arco corto y aljaba con 20 flechas', armas: ['arco-corto'], otros: ['Aljaba con 20 flechas'] }, arma('b', 'Espada corta', 'espada-corta')] },
+        paquetes('ladron', 'mazmorras', 'explorador'),
+      ],
+      fijo: { armadura: 'cuero', armas: ['daga'], otros: ['2 dagas', 'Herramientas de ladrón'] },
       progreso: ['Acción astuta', 'Elige su arquetipo, Ataque furtivo 2d6', 'Mejora de característica', 'Esquiva asombrosa, Ataque furtivo 3d6'] },
   ];
 
@@ -162,19 +267,19 @@ window.PJ = window.PJ || {};
     { id: 'burla', nombre: 'Burla dañina', nivel: 0, clases: ['bardo'], d: 'Un insulto mágico: 1d4 psíquico.', ataque: { modo: 'salv', car: 'sab', dado: '1d4', tipo: 'psíquico' } },
     { id: 'descarga-fuego', nombre: 'Descarga de fuego', nivel: 0, clases: ['hechicero', 'mago'], d: 'Lanzas una chispa ardiente: 1d10 de fuego.', ataque: { modo: 'ataque', dado: '1d10', tipo: 'fuego' } },
     { id: 'escarcha', nombre: 'Rayo de escarcha', nivel: 0, clases: ['hechicero', 'mago'], d: '1d8 de frío y frena al objetivo.', ataque: { modo: 'ataque', dado: '1d8', tipo: 'frío' } },
-    { id: 'toque', nombre: 'Toque electrizante', nivel: 0, clases: ['hechicero', 'mago'], d: 'Un toque de 1d8 de rayo.', ataque: { modo: 'ataque', dado: '1d8', tipo: 'rayo' } },
+    { id: 'toque', nombre: 'Agarre electrizante', nivel: 0, clases: ['hechicero', 'mago'], d: 'Un toque de 1d8 de rayo.', ataque: { modo: 'ataque', dado: '1d8', tipo: 'rayo' } },
     { id: 'descarga-brujo', nombre: 'Descarga sobrenatural', nivel: 0, clases: ['brujo'], d: 'Un rayo de energía: 1d10 de fuerza.', ataque: { modo: 'ataque', dado: '1d10', tipo: 'fuerza' } },
     { id: 'llama-sagrada', nombre: 'Llama sagrada', nivel: 0, clases: ['clerigo'], d: 'Luz divina que cae del cielo: 1d8 radiante.', ataque: { modo: 'salv', car: 'des', dado: '1d8', tipo: 'radiante' } },
     { id: 'guia', nombre: 'Guía', nivel: 0, clases: ['clerigo', 'druida'], d: 'Un aliado suma 1d4 a una prueba.' },
     { id: 'taumaturgia', nombre: 'Taumaturgia', nivel: 0, clases: ['clerigo'], d: 'Pequeños prodigios: voz potente, temblores, llamas.' },
     { id: 'resistencia', nombre: 'Resistencia', nivel: 0, clases: ['clerigo', 'druida'], d: 'Un aliado suma 1d4 a una salvación.' },
-    { id: 'garrote', nombre: 'Garrote mágico', nivel: 0, clases: ['druida'], d: 'Tu bastón pega con Sabiduría y hace 1d8.' },
-    { id: 'llama-producida', nombre: 'Llama producida', nivel: 0, clases: ['druida'], d: 'Una llama que ilumina o se lanza: 1d8 de fuego.', ataque: { modo: 'ataque', dado: '1d8', tipo: 'fuego' } },
-    { id: 'druidismo', nombre: 'Druidismo', nivel: 0, clases: ['druida'], d: 'Pequeños efectos naturales, como predecir el clima.' },
+    { id: 'garrote', nombre: 'Shillelagh', nivel: 0, clases: ['druida'], d: 'Tu bastón pega con Sabiduría y hace 1d8.' },
+    { id: 'llama-producida', nombre: 'Crear llama', nivel: 0, clases: ['druida'], d: 'Una llama que ilumina o se lanza: 1d8 de fuego.', ataque: { modo: 'ataque', dado: '1d8', tipo: 'fuego' } },
+    { id: 'druidismo', nombre: 'Saber druídico', nivel: 0, clases: ['druida'], d: 'Pequeños efectos naturales, como predecir el clima.' },
     { id: 'curar', nombre: 'Curar heridas', nivel: 1, clases: ['bardo', 'clerigo', 'druida'], d: 'Al tocar, cura 1d8 + tu modificador de magia.' },
     { id: 'palabra', nombre: 'Palabra de curación', nivel: 1, clases: ['bardo', 'clerigo', 'druida'], d: 'A distancia, cura 1d4 + tu modificador de magia.' },
-    { id: 'bendecir', nombre: 'Bendecir', nivel: 1, clases: ['clerigo'], d: '3 aliados suman 1d4 a ataques y salvaciones.' },
-    { id: 'rayo-guia', nombre: 'Rayo guía', nivel: 1, clases: ['clerigo'], d: 'Un rayo de luz de 4d6 radiante.' },
+    { id: 'bendecir', nombre: 'Bendición', nivel: 1, clases: ['clerigo'], d: '3 aliados suman 1d4 a ataques y salvaciones.' },
+    { id: 'rayo-guia', nombre: 'Saeta guía', nivel: 1, clases: ['clerigo'], d: 'Un rayo de luz de 4d6 radiante.' },
     { id: 'escudo-fe', nombre: 'Escudo de fe', nivel: 1, clases: ['clerigo'], d: 'Un aliado gana +2 a su CA.' },
     { id: 'proyectil', nombre: 'Proyectil mágico', nivel: 1, clases: ['hechicero', 'mago'], d: '3 dardos que nunca fallan: 1d4+1 cada uno.' },
     { id: 'escudo', nombre: 'Escudo', nivel: 1, clases: ['hechicero', 'mago'], d: 'Como reacción, +5 a tu CA por un turno.' },
@@ -183,13 +288,13 @@ window.PJ = window.PJ || {};
     { id: 'manos-ardientes', nombre: 'Manos ardientes', nivel: 1, clases: ['hechicero', 'mago'], d: 'Un cono de 3d6 de fuego.' },
     { id: 'hechizar', nombre: 'Hechizar persona', nivel: 1, clases: ['bardo', 'brujo', 'druida', 'hechicero', 'mago'], d: 'Alguien te ve como amigo por 1 hora.' },
     { id: 'detectar', nombre: 'Detectar magia', nivel: 1, clases: ['bardo', 'clerigo', 'druida', 'hechicero', 'mago'], d: 'Percibes la magia cerca de ti.' },
-    { id: 'onda', nombre: 'Onda atronadora', nivel: 1, clases: ['bardo', 'druida', 'hechicero', 'mago'], d: 'Un estallido de 2d8 de trueno que empuja.' },
+    { id: 'onda', nombre: 'Ola atronadora', nivel: 1, clases: ['bardo', 'druida', 'hechicero', 'mago'], d: 'Un estallido de 2d8 de trueno que empuja.' },
     { id: 'disfrazarse', nombre: 'Disfrazarse', nivel: 1, clases: ['bardo', 'hechicero', 'mago'], d: 'Cambias tu apariencia por 1 hora.' },
     { id: 'enmaranar', nombre: 'Enmarañar', nivel: 1, clases: ['druida'], d: 'Plantas que atrapan a los enemigos.' },
     { id: 'fuego-feerico', nombre: 'Fuego feérico', nivel: 1, clases: ['bardo', 'druida'], d: 'Revela enemigos y da ventaja para golpearlos.' },
     { id: 'bayas', nombre: 'Buenas bayas', nivel: 1, clases: ['druida'], d: '10 bayas que curan 1 punto y alimentan.' },
     { id: 'reprension', nombre: 'Reprensión infernal', nivel: 1, clases: ['brujo'], d: 'Si te hieren, respondes con 2d10 de fuego.' },
-    { id: 'manos-brujo', nombre: 'Armadura de sombras', nivel: 1, clases: ['brujo'], d: 'Sombras te envuelven: CA 13 + DES por 8 horas.' },
+    { id: 'retirada', nombre: 'Retirada expeditiva', nivel: 1, clases: ['brujo', 'hechicero', 'mago'], d: 'Durante 10 minutos puedes correr como acción adicional.' },
     { id: 'miedo', nombre: 'Orden imperiosa', nivel: 1, clases: ['clerigo'], d: 'Una palabra obliga a alguien a obedecer un turno.' },
   ];
 
@@ -229,7 +334,7 @@ window.PJ = window.PJ || {};
         { clase: 'clerigo', opcion: 'guerra', t: 'Con fe y escudo', d: 'Magia de protección y una buena armadura.' },
       ],
       razas: [['enano', 'montanas'], ['enano', 'colinas'], ['semiorco'], ['draconido']], trasfondos: ['soldado', 'heroe', 'forastero'],
-      hab: ['atletismo', 'intimidacion', 'percepcion'], conjuros: ['escudo', 'escudo-fe', 'armadura-mago', 'manos-brujo', 'resistencia', 'bendecir'] },
+      hab: ['atletismo', 'intimidacion', 'percepcion'], conjuros: ['escudo', 'escudo-fe', 'armadura-mago', 'resistencia', 'bendecir'] },
     magia: { etiqueta: 'usar magia', pregunta: '¿De dónde viene tu magia?',
       rutas: [
         { clase: 'mago', t: 'Estudiando en un libro', d: 'Tienes la lista de conjuros más grande.' },
@@ -322,7 +427,7 @@ window.PJ = window.PJ || {};
         { clase: 'brujo', opcion: 'primigenio', t: 'Con una entidad antigua', d: 'Magia de la mente y secretos prohibidos.' },
       ],
       razas: [['tiflin'], ['semielfo'], ['elfo', 'oscuro']], trasfondos: ['ermitano', 'charlatan', 'sabio'],
-      hab: ['arcano', 'engano', 'intimidacion'], conjuros: ['reprension', 'manos-brujo', 'hechizar', 'descarga-brujo', 'ilusion'] },
+      hab: ['arcano', 'engano', 'intimidacion'], conjuros: ['reprension', 'retirada', 'hechizar', 'descarga-brujo', 'ilusion'] },
     punos: { etiqueta: 'pelear sin armas', car: ['des'],
       rutas: [{ clase: 'monje', t: 'Con artes marciales', d: 'Tus puños son tu arma y esquivas casi todo.' }],
       razas: [['elfo', 'bosque'], ['humano'], ['mediano', 'fornido']], trasfondos: ['ermitano', 'acolito', 'soldado'],
@@ -344,7 +449,7 @@ window.PJ = window.PJ || {};
   P.FIRMA = {
     barbaro: { hab: ['atletismo', 'percepcion', 'intimidacion', 'supervivencia'] },
     bardo: { hab: ['persuasion', 'engano', 'perspicacia', 'interpretacion'], magia: ['burla', 'ilusion', 'mano', 'prestidigitacion', 'palabra', 'dormir', 'curar', 'hechizar', 'fuego-feerico', 'onda', 'detectar', 'disfrazarse'] },
-    brujo: { hab: ['engano', 'arcano', 'intimidacion', 'investigacion'], magia: ['descarga-brujo', 'mano', 'ilusion', 'prestidigitacion', 'manos-brujo', 'reprension', 'hechizar'] },
+    brujo: { hab: ['engano', 'arcano', 'intimidacion', 'investigacion'], magia: ['descarga-brujo', 'mano', 'ilusion', 'prestidigitacion', 'reprension', 'hechizar', 'retirada'] },
     clerigo: { hab: ['medicina', 'perspicacia', 'persuasion', 'religion'], magia: ['llama-sagrada', 'guia', 'taumaturgia', 'resistencia', 'luz', 'curar', 'palabra', 'bendecir', 'escudo-fe', 'rayo-guia', 'miedo', 'detectar'] },
     druida: { hab: ['percepcion', 'perspicacia', 'medicina', 'naturaleza'], magia: ['llama-producida', 'guia', 'garrote', 'resistencia', 'druidismo', 'curar', 'palabra', 'enmaranar', 'fuego-feerico', 'bayas', 'onda', 'detectar', 'hechizar'] },
     explorador: { hab: ['sigilo', 'percepcion', 'supervivencia', 'perspicacia'] },
@@ -378,6 +483,17 @@ window.PJ = window.PJ || {};
   P.NOMBRES = {
     humano: ['Aldric', 'Mirela', 'Tomás', 'Inés', 'Bruno', 'Selene'], elfo: ['Aelir', 'Sylwen', 'Thaliel', 'Naeris', 'Elarion', 'Lyra'], enano: ['Brenna', 'Durgan', 'Helka', 'Thorvin', 'Ragna', 'Korr'], mediano: ['Pipo', 'Rosa', 'Milo', 'Tessa', 'Bodo', 'Lili'], draconido: ['Vorkar', 'Sythra', 'Drazen', 'Kalyx', 'Rhoga', 'Zerith'], gnomo: ['Nim', 'Tikka', 'Bimbo', 'Quilla', 'Zook', 'Pippa'], semielfo: ['Elian', 'Mara', 'Soren', 'Liora', 'Darian', 'Nerea'], semiorco: ['Grusk', 'Urla', 'Thokk', 'Mogra', 'Drek', 'Shara'], tiflin: ['Azura', 'Malek', 'Nyx', 'Vesper', 'Kael', 'Lilit'],
   };
+
+  P.PALETAS_DADO = [
+    { id: 'rubi', nombre: 'Rubí', cuerpo: '#6E0F0C', canto: '#E9C877', tinta: '#FFF3D6' },
+    { id: 'zafiro', nombre: 'Zafiro', cuerpo: '#123A7A', canto: '#BFD8FF', tinta: '#FFFFFF' },
+    { id: 'esmeralda', nombre: 'Esmeralda', cuerpo: '#0E5A3C', canto: '#E9C877', tinta: '#FFF3D6' },
+    { id: 'amatista', nombre: 'Amatista', cuerpo: '#4B1E7E', canto: '#D9B8FF', tinta: '#FFFFFF' },
+    { id: 'obsidiana', nombre: 'Obsidiana', cuerpo: '#15131A', canto: '#C9CDD6', tinta: '#FFFFFF' },
+    { id: 'hueso', nombre: 'Hueso', cuerpo: '#E9DFC8', canto: '#6B4E2A', tinta: '#2A2016' },
+    { id: 'oro', nombre: 'Oro', cuerpo: '#B8860B', canto: '#FFF0B8', tinta: '#2A1A00' },
+    { id: 'hielo', nombre: 'Hielo', cuerpo: '#9FD8E8', canto: '#FFFFFF', tinta: '#0E3A4A' },
+  ];
 
   P.PX = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000];
   P.DADO_FIJO = { 6: 4, 8: 5, 10: 6, 12: 7 };

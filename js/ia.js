@@ -68,7 +68,7 @@
   function ficha(pj) {
     const c = P.calcular(pj);
     const op = c.clase && c.clase.opcion && pj.opcionId ? P.buscar(c.clase.opcion.lista, pj.opcionId) : null;
-    return JSON.stringify({ raza: c.nombreRaza || null, clase: c.clase ? c.clase.nombre : null, loMasImportanteDeSuClase: c.clase ? c.clase.clave : null, opcionDeClase: op ? op.nombre : null, trasfondo: c.trasfondo ? c.trasfondo.nombre : null, equipo: c.kit ? c.kit.nombre : null, nombre: pj.nombre || null, puntuaciones: c.hayPuntuaciones ? Object.fromEntries(P.CARACT.map((a) => [a.id, c.caract[a.id].total])) : null, comoSeComporta: pj.rasgo || null, enQueCree: pj.ideal || null, queProtege: pj.vinculo || null, loQueHaContado: pj.concepto || null });
+    return JSON.stringify({ raza: c.nombreRaza || null, clase: c.clase ? c.clase.nombre : null, loMasImportanteDeSuClase: c.clase ? c.clase.clave : null, opcionDeClase: op ? op.nombre : null, trasfondo: c.trasfondo ? c.trasfondo.nombre : null, equipo: c.equipo.slice(0, 8), nombre: pj.nombre || null, puntuaciones: c.hayPuntuaciones ? Object.fromEntries(P.CARACT.map((a) => [a.id, c.caract[a.id].total])) : null, comoSeComporta: pj.rasgo || null, enQueCree: pj.ideal || null, queProtege: pj.vinculo || null, loQueHaContado: pj.concepto || null });
   }
 
   function sistema(pj) {
@@ -95,7 +95,7 @@
   const CAMPOS_SUGERIR = { nombre: 'un nombre para el personaje, propio de su raza, de máximo 40 caracteres', rasgo: 'cómo se comporta, en una frase en primera persona', ideal: 'en qué cree, en una frase en primera persona', vinculo: 'qué o a quién protege, en una frase en primera persona', defecto: 'qué le mete en problemas, en una frase en primera persona' };
   const PEDIDOS = {
     reparto: (pj, valores) => ({
-      instruccion: `Reparte estos seis números entre las seis características: ${valores.join(', ')}. Usa cada número exactamente una vez, también los repetidos. Ten en cuenta su clase, sus bonos de raza y lo que ha contado.`,
+      instruccion: `Reparte estos seis números entre las seis características: ${valores.join(', ')}. Usa cada número exactamente una vez, también los repetidos. El número más alto debe ir a ${P.elegir.principales(pj)[0]} y el segundo a ${P.elegir.principales(pj)[1]}, salvo que eso rompa lo que pidió. Ajusta el resto a sus bonos de raza y a lo que ha contado.`,
       esquema: { type: 'OBJECT', properties: Object.assign(Object.fromEntries(P.CARACT.map((a) => [a.id, { type: 'INTEGER' }])), { por: { type: 'STRING' } }), required: P.CARACT.map((a) => a.id).concat('por') },
     }),
     habilidades: (pj) => {
@@ -113,11 +113,55 @@
         esquema: { type: 'OBJECT', properties: { trucos: lista('STRING', o.trucos.map((s) => s.id)), conjuros: lista('STRING', o.conjuros.map((s) => s.id)), por: { type: 'STRING' } }, required: ['trucos', 'conjuros', 'por'] },
       };
     },
+    equipo: (pj) => {
+      const cl = P.buscar(P.CLASES, pj.claseId);
+      const grupos = P.opcionesEquipo(cl, pj).map((g) => `Grupo ${g.id} (${g.t}): ` + g.op.map((o) => `${o.id} = ${o.t}`).join('; ')).join('\n');
+      const ids = [...new Set(cl.equipo.flatMap((g) => g.op.flatMap((o) => (o.elige || []).map((r) => r[0]))).concat((cl.fijo.elige || []).map((r) => r[0])))];
+      const armas = ids.map((l) => `Lista ${l}: ` + P.armasDe(l).map((a) => `${a.id} = ${a.nombre} ${a.dado} ${a.tipo}`).join(', ')).join('\n');
+      return {
+        instruccion: `Elige una opción de cada grupo de equipo inicial. En armas, indica para cada ranura libre el arma que le conviene. Una ranura se llama como su grupo, un punto y un número desde 0, como «armas.0»; las de la parte fija se llaman «fijo.0». Elige dentro de la lista que corresponde a esa opción.\n${grupos}\n${armas}`,
+        esquema: { type: 'OBJECT', properties: { elecciones: { type: 'ARRAY', items: { type: 'OBJECT', properties: { grupo: { type: 'STRING' }, opcion: { type: 'STRING' } }, required: ['grupo', 'opcion'] } }, armas: { type: 'ARRAY', items: { type: 'OBJECT', properties: { ranura: { type: 'STRING' }, arma: { type: 'STRING' } }, required: ['ranura', 'arma'] } }, por: { type: 'STRING' } }, required: ['elecciones', 'armas', 'por'] },
+      };
+    },
     sugerir: (pj, campo) => ({
       instruccion: `Propón ${CAMPOS_SUGERIR[campo]}. Debe encajar con lo que ya sabes del personaje y no repetir lo que ya tiene. Si es una frase, usa máximo 120 caracteres.`,
       esquema: { type: 'OBJECT', properties: { texto: { type: 'STRING' }, por: { type: 'STRING' } }, required: ['texto', 'por'] },
       temperatura: 0.9,
     }),
+  };
+
+  /* Modo DM: Gemini escribe y elige entre opciones válidas. Nunca decide números: lo valida P.dm.validarIA. */
+  const texto = { type: 'STRING' }, entero = { type: 'INTEGER' };
+  const objeto = (campos) => ({ type: 'OBJECT', properties: campos, required: Object.keys(campos) });
+  const PEDIDOS_DM = {
+    pnj: ({ filtros, local }) => ({
+      instruccion: `Crea un personaje no jugador memorable para la mesa. Raza: ${filtros.raza === 'cualquiera' ? 'la que encaje' : P.buscar(P.RAZAS, filtros.raza).nombre}. Dónde lo encuentran: ${filtros.rol}. Sugerencia de nombre: ${local.nombre}. Da detalles concretos que el DM pueda interpretar.`,
+      esquema: objeto({ nombre: texto, raza: texto, oficio: texto, apariencia: texto, personalidad: texto, ideal: texto, defecto: texto, voz: texto, quiere: texto, secreto: texto }),
+      temperatura: 0.9, validar: [],
+    }),
+    encuentro: ({ opciones }) => ({
+      instruccion: `Elige la propuesta de encuentro que mejor encaje con la campaña y descríbela. En opcion, indica su número desde 0. No cambies las criaturas.\n${opciones.map((e, i) => `${i}: ${e.grupo.map((g) => g.q + ' × ' + g.n).join(', ')}. Lugar: ${e.escena}`).join('\n')}\nEn escena, descríbela para leerla en voz alta. En tactica, di cómo pelean esas criaturas. En giro, propone una complicación.`,
+      esquema: objeto({ opcion: entero, escena: texto, tactica: texto, giro: texto }),
+      temperatura: 0.8, validar: [opciones],
+    }),
+    objeto: ({ opciones }) => ({
+      instruccion: `Elige el objeto mágico que mejor encaje con la campaña y cuenta su historia en dos frases. En opcion, indica su número desde 0. No cambies lo que hace.\n${opciones.map((o, i) => `${i}: ${o.n} (${o.t})`).join('\n')}`,
+      esquema: objeto({ opcion: entero, historia: texto }),
+      temperatura: 0.8, validar: [opciones],
+    }),
+    trampa: ({ trampa }) => ({
+      instruccion: `Reescribe esta trampa para que encaje con la campaña, sin cambiar lo que hace. Nombre: ${trampa.nombre}. Se activa al ${trampa.disparador}. Efecto: ${trampa.descripcion}. En descripcion, cuenta qué ven y sienten los personajes cuando salta. En pista, escribe el detalle que la delata. No menciones números.`,
+      esquema: objeto({ descripcion: texto, pista: texto }),
+      temperatura: 0.8, validar: [trampa],
+    }),
+    turno: ({ est, g }) => {
+      const rivales = P.dm.combate.rivales(est, g);
+      return {
+        instruccion: `Es el turno de ${g.nombre}, con ${g.pg} de ${g.pgMax} puntos de golpe. Decide a quién ataca según cómo pelearía esa criatura.\nObjetivos posibles:\n${rivales.map((r) => `${r.id}: ${r.nombre}, CA ${r.ca}, ${r.pg} de vida`).join('\n')}\nEn objetivo, escribe solo el identificador. En narracion, cuenta en una frase cómo actúa, sin decir si acierta ni cuánto daño hace.`,
+        esquema: objeto({ objetivo: { type: 'STRING', enum: rivales.map((r) => r.id) }, narracion: texto }),
+        temperatura: 0.7, validar: [est, g],
+      };
+    },
   };
 
   // Una sola puerta a Gemini: pide JSON según el esquema y devuelve el objeto ya leído
@@ -159,6 +203,13 @@
       const p = PEDIDOS[tipo](pj, extra);
       const datos = await generar(['Ayudas a una persona principiante a elegir la mejor opción para su personaje de D&D 5.ª edición (reglas de 2014). Responde en español.', 'Decide según su clase, su raza, su trasfondo y lo que ha contado. En por, explícale en una frase corta por qué.', 'Personaje: ' + ficha(pj)].join('\n'), p.instruccion, p.esquema, p.temperatura || 0.3);
       const r = P.elegir.validar[tipo](datos, pj, extra);
+      if (!r) throw new Error('Gemini propuso algo que no cumple las reglas.');
+      return r;
+    },
+    async dm(tipo, datos) {
+      const p = PEDIDOS_DM[tipo](datos);
+      const instrucciones = ['Ayudas a un DM principiante a dirigir su partida (reglas de 2014). Escribe en español, con frases cortas y evocadoras que se puedan leer en voz alta.', datos.campana ? 'Su campaña: ' + datos.campana : 'No hay datos de la campaña: usa fantasía clásica.'].join('\n');
+      const r = P.dm.validarIA[tipo](await generar(instrucciones, p.instruccion, p.esquema, p.temperatura), ...p.validar);
       if (!r) throw new Error('Gemini propuso algo que no cumple las reglas.');
       return r;
     },

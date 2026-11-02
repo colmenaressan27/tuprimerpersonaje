@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Tu Primer Personaje</title>
-  <meta name="description" content="Crea tu primer personaje de D&D 5.ª edición paso a paso, aprende a tirar los dados y llévate tu hoja en PDF, imagen o al celular.">
+  <meta name="description" content="Crea tu primer personaje compatible con la quinta edición paso a paso, aprende a tirar los dados y llévate tu hoja en PDF, imagen o al celular.">
   <meta name="theme-color" content="#0E0A16">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpolygon points='50,4 90,27 90,73 50,96 10,73 10,27' fill='%239E2419' stroke='%23E9C877' stroke-width='5'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="vendor/bootstrap.min.css">
@@ -20,6 +20,8 @@
       </a>
       <nav class="barra-acciones" aria-label="Herramientas">
         <button type="button" class="btn-barra d-lg-none" id="btn-vivo" data-bs-toggle="offcanvas" data-bs-target="#panel-vivo" aria-label="Ver mi personaje" hidden><span class="ico" data-ico="corona"></span></button>
+        <button type="button" class="btn-barra" data-accion="ir-dm"><span class="ico" data-ico="calavera"></span><span class="etq">Modo DM</span></button>
+        <button type="button" class="btn-barra" data-bs-toggle="offcanvas" data-bs-target="#panel-personajes"><span class="ico" data-ico="corona"></span><span class="etq">Personajes</span></button>
         <button type="button" class="btn-barra" data-bs-toggle="offcanvas" data-bs-target="#panel-dados"><span class="ico" data-ico="dados"></span><span class="etq">Dados</span></button>
         <button type="button" class="btn-barra" data-bs-toggle="offcanvas" data-bs-target="#panel-asistente"><span class="ico" data-ico="pluma"></span><span class="etq">Pedir cambios</span></button>
         <button type="button" class="btn-barra" data-bs-toggle="offcanvas" data-bs-target="#panel-guia"><span class="ico" data-ico="libro"></span><span class="etq">Guía</span></button>
@@ -34,7 +36,7 @@
       <div class="container-xxl">
         <div class="row align-items-center g-4">
           <div class="col-lg-7 portada-texto">
-            <p class="ojillo aparece" style="--i:0">Para quien nunca ha jugado · D&amp;D 5.ª edición</p>
+            <p class="ojillo aparece" style="--i:0">Para quien nunca ha jugado · Compatible con 5E</p>
             <h1 id="titulo-portada" class="aparece" style="--i:1">Tu primer personaje</h1>
             <p class="entrada aparece" style="--i:2">Te llevamos de la mano: aprendes a tirar los dados, creas tu héroe paso a paso y te llevas tu hoja en PDF, en imagen o directo a tu celular.</p>
             <div class="portada-botones aparece" style="--i:3">
@@ -89,6 +91,11 @@
       </div>
     </section>
 
+    <!-- ======= Modo DM ======= -->
+    <section id="vista-dm" class="crear" hidden>
+      <div class="container-xxl" id="dm"></div>
+    </section>
+
     <!-- ======= Hoja abierta desde un QR ======= -->
     <section id="vista-visor" class="crear" hidden aria-labelledby="titulo-visor">
       <div class="container-xxl">
@@ -102,17 +109,29 @@
 
   <footer class="pie">
     <div class="container-xxl">
-      <p><strong>Proyecto no oficial.</strong> Dungeons &amp; Dragons y D&amp;D son marcas de Wizards of the Coast, que no respalda este sitio. Las reglas están explicadas con palabras propias.</p>
-      <p>Incluye material del System Reference Document 5.1 («SRD 5.1») de Wizards of the Coast LLC, disponible en <a href="https://dnd.wizards.com/resources/systems-reference-document" rel="noopener" target="_blank">dnd.wizards.com</a>, con licencia <a href="https://creativecommons.org/licenses/by/4.0/legalcode" rel="noopener" target="_blank">Creative Commons Atribución 4.0</a>. Iconos de Lorc, Delapouite y colaboradores en <a href="https://game-icons.net" rel="noopener" target="_blank">game-icons.net</a>, con licencia <a href="https://creativecommons.org/licenses/by/3.0/" rel="noopener" target="_blank">CC BY 3.0</a>; se les cambió el color y el tamaño. Fuentes Almendra, Cinzel, Figtree y Atkinson Hyperlegible, con licencia OFL.</p>
+      <p><strong>Proyecto no oficial, compatible con quinta edición.</strong> Las explicaciones están escritas con palabras propias; los textos de conjuros, criaturas, objetos y trampas son los del SRD 5.1.</p>
+      <p>Esta obra incluye materiales extraídos del Documento de referencia del sistema 5.1 (“SRD 5.1”) de Wizards of the Coast LLC, que está disponible en <a href="https://dnd.wizards.com/es/resources/systems-reference-document" rel="noopener" target="_blank">https://dnd.wizards.com/es/resources/systems-reference-document</a>. SRD 5.1 tiene la licencia Creative Commons Atribución/Reconocimiento 4.0 Licencia Pública Internacional, que está disponible en <a href="https://creativecommons.org/licenses/by/4.0/legalcode.es" rel="noopener" target="_blank">https://creativecommons.org/licenses/by/4.0/legalcode.es</a>.</p>
+      <p>Iconos de Lorc, Delapouite y colaboradores en <a href="https://game-icons.net" rel="noopener" target="_blank">game-icons.net</a>, con licencia <a href="https://creativecommons.org/licenses/by/3.0/" rel="noopener" target="_blank">CC BY 3.0</a>; se les cambió el color y el tamaño. Fuentes Almendra, Cinzel, Figtree y Atkinson Hyperlegible, con licencia OFL.</p>
     </div>
   </footer>
 
   <!-- Dados 3D -->
   <dialog id="capa-dados" class="capa-dados" aria-label="Lanzamiento de dados">
+    <video id="ra-video" playsinline muted aria-hidden="true"></video>
     <canvas id="dados-lienzo" aria-hidden="true"></canvas>
     <div class="capa-resultado" id="capa-resultado"></div>
   </dialog>
   <div class="visually-hidden" aria-live="polite" id="vivo-dados"></div>
+
+  <!-- Mis personajes -->
+  <div class="offcanvas offcanvas-end panel" tabindex="-1" id="panel-personajes" aria-labelledby="t-panel-personajes">
+    <div class="offcanvas-header"><h2 class="offcanvas-title" id="t-panel-personajes">Mis personajes</h2><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button></div>
+    <div class="offcanvas-body">
+      <p>Se guardan solos en este dispositivo mientras los creas. Si borras los datos del navegador, se pierden.</p>
+      <button type="button" class="btn btn-primario w-100" data-accion="crear-pj">Crear otro personaje</button>
+      <ul class="lista-limpia mt-3" id="lista-personajes"></ul>
+    </div>
+  </div>
 
   <!-- Panel de dados -->
   <div class="offcanvas offcanvas-end panel" tabindex="-1" id="panel-dados" aria-labelledby="t-panel-dados">
@@ -132,6 +151,18 @@
         </div>
       </fieldset>
       <button type="button" class="btn btn-primario w-100 mt-4" data-accion="lanzar-bolsa" id="btn-bolsa">Lanzar</button>
+      <h3 class="mt-4">Color de tus dados</h3>
+      <div class="paletas" id="paletas" role="group" aria-label="Colores prediseñados"></div>
+      <div class="colores-dado">
+        <label for="dado-cuerpo">Cuerpo<input type="color" id="dado-cuerpo" data-color="cuerpo"></label>
+        <label for="dado-canto">Bordes<input type="color" id="dado-canto" data-color="canto"></label>
+        <label for="dado-tinta">Números<input type="color" id="dado-tinta" data-color="tinta"></label>
+      </div>
+      <h3 class="mt-4">Realidad aumentada</h3>
+      <div class="form-check form-switch"><input class="form-check-input" type="checkbox" role="switch" id="ra-camara"><label class="form-check-label" for="ra-camara">Lanzar sobre la cámara</label></div>
+      <p class="ayuda">Tus dados caen sobre lo que ve tu cámara, en todas las tiradas de la app. La imagen no sale de tu dispositivo.</p>
+      <button type="button" class="btn btn-secundario w-100" data-accion="ra-mesa" id="btn-ra-mesa" hidden>Dejarlos fijos sobre mi mesa</button>
+      <p class="estado" id="estado-ra" role="status"></p>
       <h3 class="mt-4">Últimas tiradas</h3>
       <ol class="historial" id="historial"><li class="ayuda">Todavía no has lanzado nada.</li></ol>
     </div>
@@ -270,14 +301,34 @@
   <div class="modal fade" id="modal-confirmar" tabindex="-1" aria-labelledby="t-confirmar" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm">
       <div class="modal-content">
-        <div class="modal-header"><h2 class="modal-title" id="t-confirmar">¿Empezar de nuevo?</h2></div>
-        <div class="modal-body"><p>Se borrará tu personaje de este dispositivo. No se puede deshacer.</p></div>
-        <div class="modal-footer"><button type="button" class="btn btn-secundario" data-bs-dismiss="modal">Conservarlo</button><button type="button" class="btn btn-peligro" data-accion="borrar-todo" data-bs-dismiss="modal">Borrar y empezar</button></div>
+        <div class="modal-header"><h2 class="modal-title" id="t-confirmar">¿Eliminar este personaje?</h2></div>
+        <div class="modal-body"><p id="confirmar-texto"></p></div>
+        <div class="modal-footer"><button type="button" class="btn btn-secundario" data-bs-dismiss="modal">Conservarlo</button><button type="button" class="btn btn-peligro" data-accion="eliminar-ok" data-bs-dismiss="modal">Eliminar</button></div>
       </div>
     </div>
   </div>
 
   <div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3" id="tostadas" aria-live="polite"></div>
+
+  <!-- Modo DM: tirada escrita a mano -->
+  <dialog id="dm-pedir" class="dm-pedir" aria-labelledby="dm-pedir-titulo">
+    <form method="dialog">
+      <h2 id="dm-pedir-titulo" class="h5"></h2>
+      <p class="ayuda" id="dm-pedir-ayuda"></p>
+      <label class="form-label" for="dm-pedir-valor">Resultado</label>
+      <input class="form-control" type="number" id="dm-pedir-valor" inputmode="numeric" required>
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button class="btn btn-secundario" value="cancelar" formnovalidate>Que la tire la app</button>
+        <button class="btn btn-primario" value="ok">Aceptar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Realidad aumentada sobre la mesa: se muestra encima de la cámara durante la sesión de WebXR -->
+  <div id="ra-capa" class="ra-capa" hidden>
+    <p id="ra-texto" role="status"></p>
+    <button type="button" class="btn btn-secundario" id="ra-salir">Salir</button>
+  </div>
 
   <!-- Páginas en blanco y negro para la impresora: solo existen mientras se imprime -->
   <div id="zona-impresion"></div>
@@ -289,13 +340,18 @@
   <script src="js/iconos.js" defer></script>
   <script src="js/datos.js" defer></script>
   <script src="js/motor.js" defer></script>
+  <script src="js/guardados.js" defer></script>
   <script src="js/interprete.js" defer></script>
   <script src="js/elegir.js" defer></script>
   <script src="js/ia.js" defer></script>
   <script src="js/dados3d.js" defer></script>
+  <script src="js/ra.js" defer></script>
+  <script src="js/srd-conjuros.js" defer></script>
   <script src="js/hoja.js" defer></script>
   <script src="js/exportar.js" defer></script>
   <script src="js/pasos.js" defer></script>
+  <script src="js/dm.js" defer></script>
+  <script src="js/dm-vista.js" defer></script>
   <script src="js/app.js" defer></script>
 </body>
 </html>

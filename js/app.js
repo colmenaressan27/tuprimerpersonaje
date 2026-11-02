@@ -3,16 +3,16 @@
   document.documentElement.lang = 'es';
   const $ = (id) => document.getElementById(id);
   const raiz = document.documentElement;
-  const CLAVE_ESTADO = 'tpp.estado', CLAVE_PREFS = 'tpp.prefs', CLAVE_URL = 'tpp.url';
+  const CLAVE_PREFS = 'tpp.prefs', CLAVE_URL = 'tpp.url';
   const leer = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } };
   const escribirLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* almacenamiento bloqueado */ } };
 
   P.ICONOS.ojo = P.ICONOS.sab;
-  const E = { pj: P.pjVacio(), paso: 'aprende', tut: { i: 0, res: null }, activos: [], ui: { filtro: 'todas' }, propuesta: null, hoja: { tema: 'noche', pagina: 1 } };
+  const E = { id: P.guardados.nuevoId(), pj: P.pjVacio(), paso: 'aprende', tut: { i: 0, res: null }, activos: [], ui: { filtro: 'todas' }, propuesta: null, hoja: { tema: 'noche', pagina: 1 } };
   P.E = E;
 
   /* ---------- Preferencias ---------- */
-  P.prefs = Object.assign({ tema: 'auto', letra: 'normal', legible: false, contraste: false, movimiento: false, sonido: true, leer: false }, leer(CLAVE_PREFS, {}));
+  P.prefs = Object.assign({ tema: 'auto', letra: 'normal', legible: false, contraste: false, movimiento: false, sonido: true, leer: false, dado: P.PALETAS_DADO[0] }, leer(CLAVE_PREFS, {}));
   const quiereMenos = matchMedia('(prefers-reduced-motion: reduce)');
   const temaOscuro = matchMedia('(prefers-color-scheme: dark)');
   P.movimientoActivo = () => !quiereMenos.matches && !P.prefs.movimiento;
@@ -29,7 +29,8 @@
     raiz.dataset.contraste = P.prefs.contraste || matchMedia('(prefers-contrast: more)').matches ? 'alto' : 'no';
     raiz.dataset.movimiento = P.prefs.movimiento ? 'reducido' : 'normal';
     aplicarAcento();
-    if (dadoPortada) dadoPortada.redibujar();
+    P.dados3d.colores(P.prefs.dado);
+    if (dadoPortada) dadoPortada.repintar();
   }
   function mezclarHex(a, b, t) {
     const n = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -82,18 +83,106 @@
   }
 
   /* ---------- Estado ---------- */
-  let reloj = null;
+  let reloj = null, sinEspacio = false;
   function guardar() {
     clearTimeout(reloj);
-    reloj = setTimeout(() => escribirLS(CLAVE_ESTADO, { pj: E.pj, paso: E.paso, tut: { i: E.tut.i }, activos: E.activos, hoja: E.hoja }), 200);
+    reloj = setTimeout(guardarYa, 200);
+  }
+  function guardarYa() {
+    clearTimeout(reloj);
+    if (!hayAvance()) return;
+    const bien = P.guardados.guardar(E.id, { pj: E.pj, paso: E.paso, tut: { i: E.tut.i }, activos: E.activos, hoja: E.hoja });
+    if (!bien && !sinEspacio) P.avisar('No queda espacio en este dispositivo. Elimina un personaje o quita alguna imagen.');
+    sinEspacio = !bien;
   }
   function hayAvance() { return !!(E.pj.razaId || E.pj.claseId || E.pj.nombre); }
+  function limpiarAsistente() {
+    E.propuesta = null;
+    ['propuesta', 'recomendaciones', 'propuesta-respuesta'].forEach((id) => { $(id).hidden = true; });
+    $('texto-asistente').value = '';
+    $('estado-asistente').textContent = '';
+  }
+  function cargarEstado(id, e) {
+    E.id = id;
+    E.pj = Object.assign(P.pjVacio(), e.pj);
+    E.pj.base = Object.assign(P.pjVacio().base, e.pj.base);
+    E.paso = indice(e.paso) >= 0 ? e.paso : 'aprende';
+    E.tut = { i: (e.tut && e.tut.i) || 0, res: null };
+    E.activos = e.activos || [];
+    E.hoja = Object.assign({ tema: 'noche', pagina: 1 }, e.hoja);
+    limpiarAsistente(); aplicarAcento(); pintarActivos();
+  }
+  function cerrarPanelPersonajes() {
+    const p = bootstrap.Offcanvas.getInstance($('panel-personajes'));
+    if (p) p.hide();
+  }
+  function crearPersonaje() {
+    guardarYa();
+    // Quien ya hizo un personaje conoce los dados: no repite la práctica
+    const yaHay = P.guardados.lista().length > 0;
+    cargarEstado(P.guardados.nuevoId(), { pj: P.pjVacio(), paso: yaHay ? 'imagina' : 'aprende', tut: { i: yaHay ? P.MISIONES.length : 0 } });
+    cerrarPanelPersonajes();
+    return irPaso(E.paso);
+  }
+  function abrirPersonaje(id) {
+    guardarYa();
+    const e = P.guardados.abrir(id);
+    if (!e) { P.avisar('No se pudo abrir ese personaje.'); pintarPersonajes(); return; }
+    cargarEstado(id, e);
+    P.guardados.fijarActual(id);
+    cerrarPanelPersonajes();
+    irPaso(E.paso);
+  }
+  let porEliminar = null;
+  function eliminarPersonaje() {
+    const id = porEliminar, nombre = (P.guardados.lista().find((p) => p.id === id) || {}).nombre;
+    P.guardados.eliminar(id);
+    P.avisar((nombre || 'El personaje') + ' se eliminó.');
+    if (id === E.id) {
+      const siguiente = P.guardados.lista()[0], e = siguiente && P.guardados.abrir(siguiente.id);
+      if (e) { cargarEstado(siguiente.id, e); P.guardados.fijarActual(siguiente.id); } else cargarEstado(P.guardados.nuevoId(), { pj: P.pjVacio(), paso: 'aprende' });
+      if (!$('vista-crear').hidden) irPaso(E.paso);
+    }
+    pintarPersonajes(); pintarContinuar();
+  }
+  function pintarPersonajes() {
+    guardarYa();
+    const lista = P.guardados.lista();
+    $('lista-personajes').innerHTML = lista.length ? lista.map((p) => {
+      const nombre = P.esc(p.nombre || 'Sin nombre');
+      return `<li class="ficha-pj${p.id === E.id ? ' actual' : ''}"><span class="blason"${p.color ? ` style="color:${p.color}"` : ''}>${p.mini ? `<img src="${p.mini}" alt="">` : P.ico(p.icono)}</span><div><strong>${nombre}</strong><small>${P.esc(p.sub || 'Aún sin definir')}${p.id === E.id ? ' · Abierto ahora' : ''}</small></div><div class="ficha-botones"><button type="button" class="btn btn-secundario btn-sm" data-accion="abrir-pj" data-valor="${p.id}" aria-label="Abrir a ${nombre}">Abrir</button><button type="button" class="btn btn-secundario btn-sm" data-accion="eliminar-pj" data-valor="${p.id}" aria-label="Eliminar a ${nombre}">Eliminar</button></div></li>`;
+    }).join('') : '<li class="ayuda">Todavía no tienes personajes guardados.</li>';
+  }
+
+  /* ---------- Imagen del personaje ---------- */
+  function reducir(img, max, calidad) {
+    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+    const x = cv.getContext('2d');
+    x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, cv.width, cv.height); // el JPEG no tiene transparencia
+    x.drawImage(img, 0, 0, cv.width, cv.height);
+    return cv.toDataURL('image/jpeg', calidad);
+  }
+  async function cargarRetrato(archivo) {
+    if (!archivo) return;
+    if (!archivo.type.startsWith('image/')) { P.avisar('Elige un archivo de imagen.'); return; }
+    const url = URL.createObjectURL(archivo), img = new Image();
+    try {
+      img.src = url;
+      await img.decode();
+      E.pj.retrato = reducir(img, 800, 0.8); E.pj.retratoMini = reducir(img, 96, 0.7);
+      refrescar();
+      P.avisar('Imagen guardada en este dispositivo.');
+    } catch (e) { P.avisar('No se pudo leer esa imagen. Prueba con otra.'); }
+    URL.revokeObjectURL(url);
+  }
 
   /* ---------- Vista viva ---------- */
   function vivoHTML() {
     const c = P.calcular(E.pj), pj = E.pj;
     const sub = [c.nombreRaza, c.clase && c.clase.nombre].filter(Boolean).join(' · ') || 'Aún sin definir';
-    return `<div class="vivo-cab"><span class="blason">${P.ico(c.clase ? c.clase.icono : c.raza ? c.raza.icono : 'd20')}</span>
+    return `<div class="vivo-cab"><span class="blason">${pj.retratoMini ? `<img src="${pj.retratoMini}" alt="">` : P.ico(c.clase ? c.clase.icono : c.raza ? c.raza.icono : 'd20')}</span>
       <div><p class="vivo-nombre">${P.esc(pj.nombre || 'Tu personaje')}</p><p class="vivo-sub">${P.esc(sub)}</p></div></div>
       <div class="gemas">${P.CARACT.map((a) => { const v = c.caract[a.id]; return `<div class="gema"><small>${a.abrev}</small><b>${v.mod === null ? '–' : P.signo(v.mod)}</b><span>${v.total ?? ''}</span></div>`; }).join('')}</div>
       <div class="vivo-stats">
@@ -144,7 +233,7 @@
     return document.startViewTransition(fn).updateCallbackDone;
   }
   function mostrarVista(id) {
-    ['vista-portada', 'vista-crear', 'vista-visor'].forEach((v) => { $(v).hidden = v !== id; });
+    ['vista-portada', 'vista-crear', 'vista-visor', 'vista-dm'].forEach((v) => { $(v).hidden = v !== id; });
     $('btn-vivo').hidden = id !== 'vista-crear';
     if (portadaViva) portadaViva.pausar(id !== 'vista-portada');
   }
@@ -164,7 +253,7 @@
     });
   }
   function siguiente() {
-    if (E.paso === 'hoja') { new bootstrap.Modal($('modal-confirmar')).show(); return; }
+    if (E.paso === 'hoja') { crearPersonaje(); return; }
     const faltan = P.pendientes(E.pj, E.paso);
     if (faltan.length) { const f = $('faltan'); f.textContent = faltan[0]; f.className = 'faltan'; return; }
     irPaso(P.PASOS[indice(E.paso) + 1].id);
@@ -189,7 +278,9 @@
     const capa = $('capa-dados');
     capa.dataset.estado = 'girando';
     if (P.hayWebGL === false) capa.classList.add('sin-3d');
+    capa.classList.toggle('con-camara', P.ra.activa);
     if (!capa.open) capa.showModal();
+    if (P.ra.activa) await P.ra.encender().catch((e) => { desactivarCamara(P.ra.motivo(e)); capa.classList.remove('con-camara'); });
     const valores = await P.dados3d.lanzar(dados.map((lados) => ({ lados })));
     const usado = modo === 'ventaja' ? Math.max(...valores) : modo === 'desventaja' ? Math.min(...valores) : valores.reduce((a, b) => a + b, 0);
     const total = usado + suma;
@@ -215,6 +306,34 @@
     return r;
   };
   function cerrarDados() { P.dados3d.cerrar(); }
+
+  /* ---------- Color y realidad aumentada de los dados ---------- */
+  function desactivarCamara(aviso) {
+    P.ra.activa = false;
+    $('ra-camara').checked = false;
+    $('estado-ra').className = 'estado error'; $('estado-ra').textContent = aviso;
+  }
+  async function alternarCamara(activar) {
+    const est = $('estado-ra');
+    est.className = 'estado'; est.textContent = '';
+    if (!activar) { P.ra.activa = false; return; }
+    if (!P.ra.hayCamara()) { desactivarCamara('Este navegador no permite usar la cámara aquí. Abre el sitio publicado, con https.'); return; }
+    try {
+      await P.ra.encender(); // pide el permiso ahora, no en medio de una tirada
+      P.ra.apagar();
+      P.ra.activa = true;
+      est.className = 'estado ok'; est.textContent = 'Listo. Tus próximos dados caerán sobre la cámara.';
+    } catch (e) { desactivarCamara(P.ra.motivo(e)); }
+  }
+  function pintarColoresDado() {
+    const d = P.prefs.dado;
+    $('paletas').innerHTML = P.PALETAS_DADO.map((p) => `<button type="button" data-accion="dado-paleta" data-valor="${p.id}" aria-pressed="${d.cuerpo === p.cuerpo && d.canto === p.canto && d.tinta === p.tinta}"><i style="background:${p.cuerpo};border-color:${p.canto}"></i>${p.nombre}</button>`).join('');
+    ['cuerpo', 'canto', 'tinta'].forEach((k) => { $('dado-' + k).value = d[k]; });
+  }
+  function cambiarColorDado(cambio) {
+    P.prefs.dado = Object.assign({}, P.prefs.dado, cambio);
+    pintarColoresDado(); prefsCambiadas();
+  }
 
   /* ---------- Cambios en lenguaje natural ---------- */
   // Lleva una característica al segundo lugar (o al primero si ya era la segunda), intercambiando valores
@@ -243,7 +362,7 @@
     }
     if (c.tipo === 'raza') { g('razaId', 'subrazaId', 'eligeCar', 'habRaza'); pj.razaId = c.valor; pj.subrazaId = null; pj.eligeCar = []; pj.habRaza = []; }
     if (c.tipo === 'subraza') { g('subrazaId'); pj.subrazaId = c.valor; }
-    if (c.tipo === 'clase') { g('claseId', 'habClase', 'opcionId', 'pericia', 'kitId', 'trucos', 'conjuros'); elegirClase(c.valor); }
+    if (c.tipo === 'clase') { g('claseId', 'habClase', 'opcionId', 'pericia', 'kitId', 'equipoElegido', 'trucos', 'conjuros'); elegirClase(c.valor); }
     if (c.tipo === 'trasfondo') { g('trasfondoId', 'habExtra'); pj.trasfondoId = c.valor; pj.habExtra = []; }
     if (c.tipo === 'nombre') { g('nombre'); pj.nombre = c.valor; }
     if (c.tipo === 'prioridad') { g('base', 'prioridades'); subirPrioridad(c.valor); }
@@ -258,7 +377,7 @@
   }
   function elegirClase(id) {
     const pj = E.pj;
-    pj.claseId = id; pj.habClase = []; pj.opcionId = null; pj.pericia = []; pj.kitId = null; pj.trucos = []; pj.conjuros = [];
+    pj.claseId = id; pj.habClase = []; pj.opcionId = null; pj.pericia = []; pj.kitId = null; pj.equipoElegido = {}; pj.trucos = []; pj.conjuros = [];
     aplicarAcento();
   }
   function pintarActivos() {
@@ -436,7 +555,7 @@
   function pintarPaginas() {
     const lista = P.hoja.paginas(pjHoja, E.hoja.tema);
     if (!lista.includes(E.hoja.pagina)) E.hoja.pagina = 1;
-    $('hoja-paginas').innerHTML = lista.map((n) => `<input type="radio" class="btn-check" name="hoja-pagina" id="hp-${n}" value="${n}"${E.hoja.pagina === n ? ' checked' : ''}><label for="hp-${n}">Página ${n}</label>`).join('');
+    $('hoja-paginas').innerHTML = lista.map((n) => `<input type="radio" class="btn-check" name="hoja-pagina" id="hp-${n}" value="${n}"${E.hoja.pagina === n ? ' checked' : ''}><label for="hp-${n}">${n > 100 ? (lista.filter((x) => x > 100).length > 1 ? 'Conjuros ' + (n - 100) : 'Conjuros') : 'Página ' + n}</label>`).join('');
   }
   function resumenHoja(pj, c) {
     return [pj.nombre || 'Personaje sin nombre', c.nombreRaza, c.clase && c.clase.nombre, 'nivel ' + c.nivel, c.ca.valor !== null ? 'defensa ' + c.ca.valor : '', c.pgMax !== null ? 'vida ' + c.pgMax : ''].filter(Boolean).join(', ') + '. Todos los datos aparecen en los botones de tiradas.';
@@ -479,7 +598,7 @@
       <h4 class="h6 mt-3">Combate</h4><div class="rollos">${rollo('Iniciativa', c.iniciativa, 'data-tipo="iniciativa"', false)}</div>
     </section>`;
     pintarPaginas();
-    P.hoja.listas().then(pintarLienzo);
+    P.hoja.listas(pj).then(() => { if ($('hoja-paginas')) pintarPaginas(); pintarLienzo(); });
   }
   function tirarRollo(b) {
     const c = P.calcular(pjHoja), t = b.dataset.tipo, v = b.dataset.valor;
@@ -515,7 +634,7 @@
   async function imprimir(boton) {
     boton.setAttribute('aria-busy', 'true');
     try {
-      await P.hoja.listas();
+      await P.hoja.listas(pjHoja);
       const imagenes = await Promise.all(P.hoja.paginas(pjHoja, 'byn').map(async (pagina) => {
         const img = new Image();
         img.alt = 'Página ' + pagina + ' de la hoja de personaje';
@@ -642,7 +761,7 @@
     E.ui.popCar = k;
   }
   const ACCIONES = {
-    empezar() { irPaso(hayAvance() ? E.paso : 'aprende'); },
+    empezar() { if (hayAvance()) crearPersonaje(); else irPaso('aprende'); },
     continuar() { irPaso(E.paso); },
     'ir-portada'(e) { e.preventDefault(); mostrarVista('vista-portada'); pintarContinuar(); window.scrollTo(0, 0); try { history.pushState({}, '', '#inicio'); } catch (x) { /* archivo local */ } },
     'probar-dados'() { if (portadaViva) portadaViva.empujar(); P.tirar({ dados: [20], titulo: 'Tu tirada de d20' }); },
@@ -684,6 +803,9 @@
       } });
     },
     'reiniciar-tiradas'() { E.pj.tiradas = []; E.pj.base = Object.fromEntries(P.CARACT.map((a) => [a.id, null])); refrescar(); },
+    'auto-equipo'(e, b) {
+      elegirPorMi('equipo', b, P.elegir.equipo(E.pj), (r) => { E.pj.kitId = null; E.pj.equipoElegido = r.equipoElegido; refrescar(); });
+    },
     'auto-magia'(e, b) {
       elegirPorMi('magia', b, P.elegir.magia(E.pj), (r) => { E.pj.trucos = r.trucos; E.pj.conjuros = r.conjuros; refrescar(); });
     },
@@ -723,15 +845,38 @@
     },
     'nivel-fijo'() { guardarMejora(); N.golpe = P.DADO_FIJO[P.calcular(pjHoja).clase.d]; pintarNivel(); },
     'nivel-ok': confirmarNivel,
-    importar() { E.pj = pjHoja; E.paso = 'hoja'; E.activos = []; aplicarAcento(); irPaso('hoja'); P.avisar('Guardado en este dispositivo.'); },
-    'borrar-todo'() {
-      E.pj = P.pjVacio(); E.activos = []; E.tut = { i: 0, res: null }; E.paso = 'aprende'; E.propuesta = null;
-      aplicarAcento(); pintarActivos(); $('propuesta').hidden = true; $('recomendaciones').hidden = true; $('propuesta-respuesta').hidden = true;
-      try { localStorage.removeItem(CLAVE_ESTADO); } catch (x) { /* sin almacenamiento */ }
-      irPaso('aprende');
+    importar() {
+      guardarYa();
+      cargarEstado(P.guardados.nuevoId(), { pj: pjHoja, paso: 'hoja', tut: { i: P.MISIONES.length } });
+      guardarYa(); irPaso('hoja'); P.avisar('Guardado en este dispositivo.');
     },
+    'crear-pj'() { crearPersonaje(); },
+    'ir-dm'() { abrirDM(); try { history.pushState({}, '', '#dm'); } catch (x) { /* archivo local */ } },
+    'abrir-pj'(e, b) { abrirPersonaje(b.dataset.valor); },
+    'eliminar-pj'(e, b) {
+      porEliminar = b.dataset.valor;
+      const p = P.guardados.lista().find((x) => x.id === porEliminar);
+      $('confirmar-texto').textContent = `Se borrará a ${(p && p.nombre) || 'este personaje'} de este dispositivo. No se puede deshacer.`;
+      new bootstrap.Modal($('modal-confirmar')).show();
+    },
+    'eliminar-ok': eliminarPersonaje,
+    'quitar-retrato'() { E.pj.retrato = ''; E.pj.retratoMini = ''; refrescar(); },
     'lanzar-bolsa': lanzarBolsa,
+    'dado-paleta'(e, b) { const { cuerpo, canto, tinta } = P.buscar(P.PALETAS_DADO, b.dataset.valor); cambiarColorDado({ cuerpo, canto, tinta }); },
+    async 'ra-mesa'() {
+      const inst = bootstrap.Offcanvas.getInstance($('panel-dados'));
+      try {
+        // WebXR solo arranca dentro del toque: primero la sesión, después se cierra el panel
+        await P.ra.abrirMesa(() => {
+          const cant = Math.min(10, Math.max(1, +$('bolsa-cantidad').value || 1));
+          return { dados: Array(cant).fill(ladosBolsa), suma: +$('bolsa-suma').value || 0 };
+        });
+        if (inst) inst.hide();
+      } catch (e) { $('estado-ra').className = 'estado error'; $('estado-ra').textContent = 'No se pudo fijar a la mesa. Usa «Lanzar sobre la cámara».'; }
+    },
   };
+  Object.assign(ACCIONES, P.dmVista.acciones);
+  function abrirDM() { guardarYa(); mostrarVista('vista-dm'); window.scrollTo(0, 0); P.dmVista.abrir(); }
   function guardarMejora() { if ($('mej-a')) { N.a = $('mej-a').value; N.b = $('mej-b').value; } }
 
   document.addEventListener('click', (e) => {
@@ -749,6 +894,7 @@
 
   $('paso').addEventListener('change', (e) => {
     const t = e.target, pj = E.pj, n = t.name;
+    if (t.id === 'c-retrato') { cargarRetrato(t.files[0]); return; }
     if (n === 'raza') {
       pj.razaId = t.value; pj.subrazaId = null; pj.eligeCar = []; pj.habRaza = [];
       refrescar(); enfocarDetalle(); return;
@@ -757,7 +903,8 @@
     if (n === 'subraza') pj.subrazaId = t.value;
     else if (n === 'opcionId') pj.opcionId = t.value;
     else if (n === 'trasfondo') { pj.trasfondoId = t.value; pj.habExtra = []; refrescar(); enfocarDetalle(); return; }
-    else if (n === 'kit') pj.kitId = t.value;
+    else if (n.startsWith('equipo-')) pj.equipoElegido = Object.assign({}, P.calcular(pj).kit.elegido, { [n.slice(7)]: t.value });
+    else if (t.dataset.ranura) pj.equipoElegido = Object.assign({}, P.calcular(pj).kit.elegido, { [t.dataset.ranura]: t.value });
     else if (n === 'alineamiento') pj.alineamiento = t.value;
     else if (n === 'metodo') {
       pj.metodo = t.value;
@@ -793,6 +940,8 @@
     if (t.id === 'pref-contraste') { P.prefs.contraste = t.checked; prefsCambiadas(); }
     if (t.id === 'pref-movimiento') { P.prefs.movimiento = t.checked; prefsCambiadas(); }
     if (t.id === 'pref-sonido') { P.prefs.sonido = t.checked; prefsCambiadas(); }
+    if (t.dataset.color) cambiarColorDado({ [t.dataset.color]: t.value });
+    if (t.id === 'ra-camara') alternarCamara(t.checked);
     if (t.id === 'pref-leer') { P.prefs.leer = t.checked; if (!t.checked && window.speechSynthesis) speechSynthesis.cancel(); prefsCambiadas(); }
   });
   function prefsCambiadas() { escribirLS(CLAVE_PREFS, P.prefs); aplicarPrefs(); pintarLienzo(); }
@@ -828,7 +977,9 @@
   $('form-asistente').addEventListener('submit', (e) => { e.preventDefault(); revisar(); });
   $('guia-contenido').innerHTML = P.guiaHTML();
   $('qr-url').addEventListener('change', pintarQR);
-  $('capa-dados').addEventListener('close', () => { $('capa-dados').dataset.estado = ''; });
+  $('capa-dados').addEventListener('close', () => { $('capa-dados').dataset.estado = ''; P.ra.apagar(); });
+  $('panel-dados').addEventListener('show.bs.offcanvas', () => { P.ra.hayMesa().then((si) => { $('btn-ra-mesa').hidden = !si; }); });
+  $('panel-personajes').addEventListener('show.bs.offcanvas', pintarPersonajes);
   $('panel-asistente').addEventListener('show.bs.offcanvas', () => $('asistente-casa').append(asistente()));
   $('panel-asistente').addEventListener('hidden.bs.offcanvas', () => { const a = $('ancla-asistente'); if (a) a.append(asistente()); });
   $('modal-nivel').addEventListener('hidden.bs.modal', () => { N.golpe = null; });
@@ -836,16 +987,9 @@
   let reloj2 = null;
   window.addEventListener('resize', () => { clearTimeout(reloj2); reloj2 = setTimeout(pintarLienzo, 200); });
 
-  const previo = leer(CLAVE_ESTADO, null);
-  if (previo && previo.pj) {
-    E.pj = Object.assign(P.pjVacio(), previo.pj);
-    E.pj.base = Object.assign(P.pjVacio().base, previo.pj.base);
-    E.paso = indice(previo.paso) >= 0 ? previo.paso : 'aprende';
-    E.tut.i = (previo.tut && previo.tut.i) || 0;
-    E.activos = previo.activos || [];
-    E.hoja = Object.assign(E.hoja, previo.hoja);
-  }
-  aplicarPrefs(); pintarPrefsUI(); prepararBolsa(); prepararVoz(); prepararIA(); pintarActivos(); pintarContinuar();
+  const previo = P.guardados.iniciar();
+  if (previo) cargarEstado(previo.id, previo.estado);
+  aplicarPrefs(); pintarPrefsUI(); pintarColoresDado(); prepararBolsa(); prepararVoz(); prepararIA(); pintarActivos(); pintarContinuar();
   if (P.hayWebGL) {
     // Después del primer pintado: preparar el 3D no debe frenar la entrada del texto
     const crear = () => { portadaViva = P.dadoPortada($('d20-lienzo')); dadoPortada = portadaViva; if ($('vista-portada').hidden) portadaViva.pausar(true); };
@@ -858,6 +1002,7 @@
   function enrutar() {
     const h = location.hash;
     if (h.startsWith('#pj.')) { abrirVisor(h.slice(4)); return; }
+    if (h === '#dm') { abrirDM(); return; }
     if (h.startsWith('#paso-') && indice(h.slice(6)) >= 0) { irPaso(h.slice(6), { sinHistoria: true, sinFoco: true }); return; }
     mostrarVista('vista-portada'); pintarContinuar();
   }

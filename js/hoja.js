@@ -199,8 +199,29 @@
     for (let i = 1; i <= n; i++) { ctx.beginPath(); ctx.moveTo(x, y + i * lh); ctx.lineTo(x + ancho, y + i * lh); ctx.stroke(); }
   }
 
-  function pie(d) {
-    escribir(d, 'Tu Primer Personaje · Reglas del SRD 5.1 (CC BY 4.0) · Iconos de game-icons.net (CC BY 3.0)', W / 2, H - 62, { p: 17, a: 'center', c: d.t.tenue });
+  // El pie largo lleva el reconocimiento exacto que pide la licencia del SRD
+  function pie(d, largo) {
+    if (largo) parrafo(d, P.ATRIBUCION, W / 2, H - 73, W - 2 * M - 60, 18, { p: 15, a: 'center', c: d.t.tenue, maxLineas: 2 });
+    else escribir(d, 'Tu Primer Personaje · Compatible con 5E · Incluye material del SRD 5.1 (CC BY 4.0) · Iconos de game-icons.net (CC BY 3.0)', W / 2, H - 62, { p: 17, a: 'center', c: d.t.tenue });
+  }
+
+  /* ---------- Imagen del personaje: se prepara antes de dibujar, porque el lienzo no puede esperar a que cargue ---------- */
+  const imagenes = new Map();
+  async function prepararImagen(url) {
+    if (!url || imagenes.has(url)) return;
+    const color = new Image();
+    color.src = url;
+    await color.decode();
+    // En blanco y negro no puede quedar ni un píxel de color. Se calcula a mano: ctx.filter no existe en Safari.
+    const gris = document.createElement('canvas');
+    gris.width = color.width; gris.height = color.height;
+    const x = gris.getContext('2d');
+    x.drawImage(color, 0, 0);
+    const datos = x.getImageData(0, 0, gris.width, gris.height), p = datos.data;
+    for (let i = 0; i < p.length; i += 4) p[i] = p[i + 1] = p[i + 2] = Math.round(p[i] * 0.299 + p[i + 1] * 0.587 + p[i + 2] * 0.114);
+    x.putImageData(datos, 0, 0);
+    imagenes.clear(); // basta con la del personaje abierto: cada imagen pesa varios MB ya descomprimida
+    imagenes.set(url, { color, gris });
   }
 
   /* ---------- Página 1 ---------- */
@@ -212,8 +233,12 @@
     const xN = 462, anchoN = W - M - xN;
     if (pj.nombre) escribir(d, pj.nombre, xN, 188, { f: 'disp', p: 112, max: anchoN, min: 54 });
     else { escribir(d, 'Nombre del personaje', xN, 168, { p: 30, c: t.tenue }); renglones(d, xN, 120, anchoN, 1, 66); }
-    const sub = [c.nombreRaza, c.clase && c.clase.nombre, pj.claseId || pj.razaId ? 'Nivel ' + c.nivel : ''].filter(Boolean).join('  ·  ');
-    if (sub) escribir(d, sub, xN, 252, { p: 42, b: 600, c: t.tenue, max: anchoN });
+    const sub = [c.nombreRaza, c.clase && c.clase.nombre].filter(Boolean).join('  ·  ');
+    const wSub = sub ? escribir(d, sub, xN, 252, { p: 42, b: 600, c: t.tenue, max: anchoN - 280 }) : 0;
+    // El nivel se escribe a mano: la hoja sigue sirviendo cuando el personaje sube
+    const xNv = xN + wSub + (sub ? 34 : 0), wNv = escribir(d, 'Nivel', xNv, 252, { p: 42, b: 600, c: t.tenue });
+    ctx.strokeStyle = t.tenue; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(xNv + wNv + 14, 256); ctx.lineTo(xNv + wNv + 124, 256); ctx.stroke();
     filete(d, xN, W - M, 286);
 
     // En papel, los puntos de experiencia que aún no tienes se dejan en blanco para irlos anotando
@@ -336,7 +361,10 @@
     const yM = 1778;
     tarjeta(d, xD, yM, wD, 118);
     escribir(d, 'Dados de golpe', xD + 22, yM + 42, { p: 23, b: 600, c: t.tenue });
-    escribir(d, c.dadosGolpe, xD + 22, yM + 92, { f: 'grab', p: 40 });
+    // Cuántos dados tienes depende del nivel, así que ese número también se escribe a mano
+    ctx.strokeStyle = t.tenue; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(xD + 22, yM + 96); ctx.lineTo(xD + 88, yM + 96); ctx.stroke();
+    if (c.clase) escribir(d, 'd' + c.clase.d, xD + 96, yM + 92, { f: 'grab', p: 40 });
     const xSm = xD + 262;
     escribir(d, 'Si llegas a 0 de vida', xSm, yM + 42, { p: 23, b: 600, c: t.tenue });
     escribir(d, 'Éxitos', xSm, yM + 90, { p: 24 });
@@ -371,14 +399,25 @@
 
     // Retrato e historia
     const y1 = 304, hR = 560, wR = 600;
-    ctx.setLineDash([12, 10]); ctx.strokeStyle = t.borde; ctx.lineWidth = 2;
-    gema(ctx, M, y1, wR, hR, 18); ctx.stroke(); ctx.setLineDash([]);
-    if (!t.plano) {
-      ctx.save(); ctx.globalAlpha = 0.09;
-      icono(d, c.clase ? c.clase.icono : 'd20', M + wR / 2 - 190, y1 + hR / 2 - 190, 380, t.oro);
+    const retrato = imagenes.get(pj.retrato);
+    if (retrato) {
+      const img = t.plano ? retrato.gris : retrato.color, k = Math.max(wR / img.width, hR / img.height);
+      ctx.save();
+      gema(ctx, M, y1, wR, hR, 18); ctx.clip();
+      ctx.drawImage(img, M + (wR - img.width * k) / 2, y1 + (hR - img.height * k) / 2, img.width * k, img.height * k);
       ctx.restore();
+      ctx.strokeStyle = t.borde; ctx.lineWidth = 2.5;
+      gema(ctx, M, y1, wR, hR, 18); ctx.stroke();
+    } else {
+      ctx.setLineDash([12, 10]); ctx.strokeStyle = t.borde; ctx.lineWidth = 2;
+      gema(ctx, M, y1, wR, hR, 18); ctx.stroke(); ctx.setLineDash([]);
+      if (!t.plano) {
+        ctx.save(); ctx.globalAlpha = 0.09;
+        icono(d, c.clase ? c.clase.icono : 'd20', M + wR / 2 - 190, y1 + hR / 2 - 190, 380, t.oro);
+        ctx.restore();
+      }
+      escribir(d, 'DIBUJA A TU PERSONAJE', M + wR / 2, y1 + hR - 26, { f: 'grab', p: 22, a: 'center', c: t.tenue });
     }
-    escribir(d, 'DIBUJA A TU PERSONAJE', M + wR / 2, y1 + hR - 26, { f: 'grab', p: 22, a: 'center', c: t.tenue });
 
     const xH = M + wR + 18, wH = (W - M - xH - 18) / 2, hH = (hR - 18) / 2;
     [['Cómo me comporto', pj.rasgo], ['En qué creo', pj.ideal], ['Qué o a quién protejo', pj.vinculo], ['Qué me mete en problemas', pj.defecto]].forEach(([k, v], i) => {
@@ -480,7 +519,7 @@
       if (pj.notas) parrafo(d, pj.notas, xI, y3 + 130, wI, 40, { p: 28, maxLineas: 14 });
       else renglones(d, xI, y3 + 86, wI, 13, 48);
     }
-    pie(d);
+    pie(d, true);
   }
 
   /* ---------- Página 3: solo en blanco y negro, cuando la magia ocupa el lugar de las notas ---------- */
@@ -498,11 +537,100 @@
     pie(d);
   }
 
+  /* ---------- Hoja de conjuros: el texto oficial del SRD, sin simplificar, en tantas páginas como haga falta ---------- */
+  const COLUMNA = (W - 2 * M - 44) / 2, ARRIBA = 300, ABAJO = H - 112, RESERVA_LEYENDA = 196;
+  const P_TXT = 24, LH_TXT = 31;
+  const LEAD = /^(A niveles superiores|Acércate|Detente|Huye|Póstrate|Suelta)\./;
+  const medidor = { ctx: document.createElement('canvas').getContext('2d') };
+
+  // Renglones ya cortados, cada uno con su altura. Agrupados por conjuro para no dejar un título solo al final de una columna.
+  function filasConjuros(c) {
+    const filas = [];
+    const lista = c.magia ? c.magia.trucos.concat(c.magia.conjuros) : [];
+    lista.map((s) => P.SRD_CONJUROS[s.id]).filter(Boolean).forEach((s) => {
+      filas.push({ t: 'titulo', s: s.nombre, h: 50, conSiguientes: true }, { t: 'tipo', s: s.tipo, h: 34, conSiguientes: true });
+      [['Tiempo de lanzamiento', s.tiempo], ['Alcance', s.alcance], ['Componentes', s.componentes], ['Duración', s.duracion]].forEach(([k, v]) => {
+        lineas(medidor, k + ': ' + v, COLUMNA, { p: 22 }).forEach((l, i) => filas.push({ t: 'meta', k: i === 0 ? k + ':' : '', s: i === 0 ? l.slice(k.length + 1).trim() : l, h: 28, conSiguientes: true }));
+      });
+      filas.push({ t: 'hueco', h: 8, conSiguientes: true });
+      s.texto.forEach((p) => {
+        const lead = (p.match(LEAD) || [])[0] || '';
+        lineas(medidor, p, COLUMNA, { p: P_TXT }).forEach((l, i) => filas.push({ t: 'txt', s: l, lead: i === 0 ? lead : '', h: LH_TXT }));
+        filas.push({ t: 'hueco', h: 8 });
+      });
+      filas.push({ t: 'fin', h: 26 });
+    });
+    return filas;
+  }
+  // Reparte los renglones en dos columnas por página. La primera deja sitio para la explicación de cómo leer un conjuro.
+  function repartirConjuros(c) {
+    const filas = filasConjuros(c), paginas = [];
+    if (!filas.length) return paginas;
+    let pag = [[]], y = ARRIBA + RESERVA_LEYENDA;
+    const saltar = () => {
+      if (pag.length === 1) { pag.push([]); y = paginas.length ? ARRIBA : ARRIBA + RESERVA_LEYENDA; } else { paginas.push(pag); pag = [[]]; y = ARRIBA; }
+    };
+    filas.forEach((f, i) => {
+      // Un título debe llevar debajo sus datos y al menos el principio del texto
+      let necesita = f.h;
+      for (let k = i; filas[k] && filas[k].conSiguientes; k++) necesita += filas[k + 1] ? filas[k + 1].h : 0;
+      if (y + necesita > ABAJO) saltar();
+      if (!pag[pag.length - 1].length && (f.t === 'hueco' || f.t === 'fin')) return; // ni separadores al empezar columna
+      pag[pag.length - 1].push(f);
+      y += f.h;
+    });
+    paginas.push(pag);
+    return paginas;
+  }
+
+  function paginaConjuros(d, pj, c, n) {
+    const { t, ctx } = d;
+    fondo(d); marco(d);
+    blason(d, 190, 176, 92, c);
+    escribir(d, pj.nombre || 'Mis conjuros', 330, 172, { f: 'disp', p: 86, max: W - M - 330, min: 44 });
+    escribir(d, 'Hoja de conjuros', 330, 226, { p: 34, b: 600, c: t.tenue });
+    filete(d, 330, W - M, 256);
+    const pagina = repartirConjuros(c)[n];
+    let yIni = ARRIBA;
+    if (n === 0) {
+      // Solo en la primera página: la clave para aprender a leer el formato del libro
+      tarjeta(d, M, ARRIBA - 8, W - 2 * M, RESERVA_LEYENDA - 22);
+      escribir(d, 'Cómo leer un conjuro', M + 22, ARRIBA + 32, { f: 'disp', p: 32, c: t.oro });
+      const m = c.magia;
+      escribir(d, `Se basa en ${P.buscar(P.CARACT, m.car).nombre}  ·  Dificultad ${m.cd}  ·  Ataque ${P.signo(m.ataque)}`, W - M - 22, ARRIBA + 30, { p: 23, b: 700, a: 'right', max: 720 });
+      parrafo(d, 'Es el mismo formato del libro. Tiempo de lanzamiento: lo que gastas en tu turno. Alcance: hasta dónde llega. Componentes: V es hablar, S son gestos y M es un material. Duración: cuánto dura; si dice Concentración, termina si te distraen o lanzas otro conjuro de concentración. Truco: se lanza sin límite. Nivel 1: gasta un espacio de conjuro.', M + 22, ARRIBA + 68, W - 2 * M - 44, 28, { p: 22, maxLineas: 4 });
+      yIni = ARRIBA + RESERVA_LEYENDA;
+    }
+    pagina.forEach((col, i) => {
+      const x = M + i * (COLUMNA + 44);
+      let y = yIni;
+      col.forEach((f) => {
+        if (f.t === 'titulo') {
+          escribir(d, f.s, x, y + 36, { f: 'disp', p: 38, c: t.oro, max: COLUMNA });
+        } else if (f.t === 'tipo') {
+          escribir(d, f.s, x, y + 22, { p: 22, b: 600, c: t.tenue });
+        } else if (f.t === 'meta') {
+          const w = f.k ? escribir(d, f.k, x, y + 20, { p: 22, b: 800 }) : 0;
+          escribir(d, f.s, x + w + (w ? 8 : 0), y + 20, { p: 22, max: COLUMNA - w - 8 });
+        } else if (f.t === 'txt') {
+          const w = f.lead ? escribir(d, f.lead, x, y + 24, { p: P_TXT, b: 800 }) : 0;
+          escribir(d, f.lead ? f.s.slice(f.lead.length).trim() : f.s, x + w + (w ? 7 : 0), y + 24, { p: P_TXT });
+        } else if (f.t === 'fin') {
+          ctx.strokeStyle = t.linea; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(x, y + 8); ctx.lineTo(x + COLUMNA, y + 8); ctx.stroke();
+        }
+        y += f.h;
+      });
+    });
+    pie(d, true);
+  }
+
   P.hoja = {
-    // Páginas que tiene la hoja: quien no tiene magia ya lleva sus notas en la página 2
+    // Páginas de la hoja. Quien no tiene magia ya lleva sus notas en la página 2. Las de conjuros se numeran desde 101.
     paginas(pj, tema) {
       const c = P.calcular(pj);
-      return TEMAS[tema] && TEMAS[tema].plano && (c.magia || !c.clase) ? [1, 2, 3] : [1, 2];
+      const base = TEMAS[tema] && TEMAS[tema].plano && (c.magia || !c.clase) ? [1, 2, 3] : [1, 2];
+      return base.concat(repartirConjuros(c).map((_, i) => 101 + i));
     },
     // Dibuja una página en un lienzo ya dimensionado; devuelve el registro de textos para la capa del PDF
     dibujar(lienzo, pj, opciones = {}) {
@@ -517,7 +645,9 @@
       ctx.save();
       ctx.setTransform(escala, 0, 0, escala, opciones.dy || 0, 0);
       ctx.imageSmoothingQuality = 'high';
-      [pagina1, pagina2, pagina3][(opciones.pagina || 1) - 1](d, pj, c);
+      const pagina = opciones.pagina || 1;
+      if (pagina > 100) paginaConjuros(d, pj, c, pagina - 101);
+      else [pagina1, pagina2, pagina3][pagina - 1](d, pj, c);
       ctx.restore();
       return d.reg;
     },
@@ -528,6 +658,9 @@
       P.hoja.dibujar(cv, pj, opciones);
       return cv;
     },
-    listas() { return document.fonts ? Promise.all(['700 40px Almendra', '700 40px Cinzel', '500 30px "Figtree Variable"', '800 30px "Figtree Variable"'].map((f) => document.fonts.load(f, 'áñ'))) : Promise.resolve(); },
+    listas(pj) {
+      const fuentes = document.fonts ? ['700 40px Almendra', '700 40px Cinzel', '500 30px "Figtree Variable"', '800 30px "Figtree Variable"'].map((f) => document.fonts.load(f, 'áñ')) : [];
+      return Promise.all(fuentes.concat(pj ? prepararImagen(pj.retrato).catch(() => null) : []));
+    },
   };
 })(window.PJ);
