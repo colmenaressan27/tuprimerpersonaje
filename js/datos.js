@@ -31,6 +31,8 @@ window.PJ = window.PJ || {};
     { id: 'animales', nombre: 'Trato con Animales', car: 'sab', ej: 'Calmar y guiar animales' },
   ];
 
+  P.nombreHab = (id) => { const h = P.HABILIDADES.find((x) => x.id === id); return h.nombre + ' (' + h.car.toUpperCase() + ')'; };
+
   const VISION = { n: 'Visión en la oscuridad', d: 'Distingues formas sin luz hasta 18 m, sin colores.' };
   const FEERICO = { n: 'Linaje feérico', d: 'Ventaja contra encantamientos. La magia no puede dormirte.' };
 
@@ -206,6 +208,153 @@ window.PJ = window.PJ || {};
     { id: 'sabio', nombre: 'Sabio', icono: 'sabio', antes: 'Estudioso e investigador', hab: ['arcano', 'historia'], extra: '2 idiomas a elegir', equipo: ['Tinta y pluma', 'Carta sin responder', 'Ropa común'], oro: 10 },
     { id: 'soldado', nombre: 'Soldado', icono: 'soldado', antes: 'Miembro de un ejército', hab: ['atletismo', 'intimidacion'], extra: '1 juego, vehículos terrestres', equipo: ['Insignia de rango', 'Trofeo de guerra', 'Juego de dados', 'Ropa común'], oro: 10 },
   ];
+
+  /* A dónde lleva cada cosa que le puede gustar a una persona. Las rutas van de la que más encaja a la que menos.
+     car: características que conviene subir. hab y conjuros: los que se prefieren al elegir por ti. */
+  P.GUSTOS = {
+    curar: { etiqueta: 'curar al grupo', pregunta: '¿Cómo te imaginas curando?',
+      rutas: [
+        { clase: 'clerigo', opcion: 'vida', t: 'Con la fe de un dios', d: 'La curación más fuerte del juego, al tocar o a distancia.' },
+        { clase: 'druida', t: 'Con el poder de la naturaleza', d: 'Sanas con plantas y magia, y más adelante te conviertes en animal.' },
+        { clase: 'bardo', t: 'Con música e inspiración', d: 'Curas cantando y das ánimo a todo el grupo.' },
+        { clase: 'paladin', t: 'En plena batalla', d: 'Curas con las manos mientras peleas en primera fila.' },
+      ],
+      razas: [['enano', 'colinas'], ['elfo', 'bosque'], ['semielfo'], ['mediano', 'fornido']], trasfondos: ['ermitano', 'acolito', 'heroe'],
+      hab: ['medicina', 'perspicacia', 'religion'], conjuros: ['curar', 'palabra', 'bendecir', 'escudo-fe', 'bayas', 'guia', 'resistencia'] },
+    aguantar: { etiqueta: 'aguantar golpes', pregunta: '¿Cómo proteges al grupo?', car: ['con'],
+      rutas: [
+        { clase: 'guerrero', opcion: 'defensa', t: 'Con la mejor armadura', d: 'Cota de malla, escudo y +1 a tu defensa.' },
+        { clase: 'barbaro', t: 'Con puro aguante', d: 'En furia recibes la mitad del daño físico.' },
+        { clase: 'paladin', t: 'Con armadura y un juramento', d: 'Te pones delante de todos y además curas.' },
+        { clase: 'clerigo', opcion: 'guerra', t: 'Con fe y escudo', d: 'Magia de protección y una buena armadura.' },
+      ],
+      razas: [['enano', 'montanas'], ['enano', 'colinas'], ['semiorco'], ['draconido']], trasfondos: ['soldado', 'heroe', 'forastero'],
+      hab: ['atletismo', 'intimidacion', 'percepcion'], conjuros: ['escudo', 'escudo-fe', 'armadura-mago', 'manos-brujo', 'resistencia', 'bendecir'] },
+    magia: { etiqueta: 'usar magia', pregunta: '¿De dónde viene tu magia?',
+      rutas: [
+        { clase: 'mago', t: 'Estudiando en un libro', d: 'Tienes la lista de conjuros más grande.' },
+        { clase: 'hechicero', t: 'Naciste con ella', d: 'Sabes pocos conjuros, pero los moldeas a tu gusto.' },
+        { clase: 'brujo', t: 'De un pacto', d: 'Un ser poderoso te da magia muy fiable.' },
+        { clase: 'clerigo', t: 'De tu dios', d: 'Curas, proteges y castigas.' },
+        { clase: 'druida', t: 'De la naturaleza', d: 'Magia de plantas, clima y animales.' },
+        { clase: 'bardo', t: 'De la música', d: 'Encantas enemigos y apoyas al grupo.' },
+      ],
+      razas: [['elfo', 'alto'], ['gnomo', 'rocas'], ['tiflin'], ['semielfo']], trasfondos: ['sabio', 'acolito', 'ermitano'],
+      hab: ['arcano', 'investigacion', 'religion'], conjuros: ['proyectil', 'detectar', 'escudo', 'mano', 'luz'] },
+    pegar: { etiqueta: 'pegar fuerte', pregunta: '¿Cómo te gusta pelear?', car: ['fue'],
+      rutas: [
+        { clase: 'barbaro', t: 'Con furia', d: 'Pegas durísimo y casi nada te detiene.' },
+        { clase: 'guerrero', t: 'Con técnica y buenas armas', d: 'La clase más directa: armas, armadura y a la carga.' },
+        { clase: 'paladin', t: 'Con un juramento sagrado', d: 'Castigas con fuerza divina y también curas.' },
+        { clase: 'monje', t: 'Con los puños y la velocidad', d: 'Golpeas varias veces por turno, sin armas ni armadura.' },
+        { clase: 'explorador', t: 'Como cazador', d: 'Armas ligeras, puntería y mucha astucia.' },
+      ],
+      razas: [['semiorco'], ['draconido'], ['enano', 'montanas'], ['humano']], trasfondos: ['soldado', 'forastero', 'heroe'],
+      hab: ['atletismo', 'intimidacion', 'percepcion'], conjuros: ['garrote', 'rayo-guia', 'proyectil', 'onda', 'manos-ardientes'] },
+    sombras: { etiqueta: 'moverte en las sombras', pregunta: '¿Qué haces desde las sombras?', car: ['des'],
+      rutas: [
+        { clase: 'picaro', t: 'Robar y atacar por sorpresa', d: 'Sigilo, trampas y un golpe que duele mucho.' },
+        { clase: 'explorador', t: 'Acechar y rastrear', d: 'Cazas a tus presas sin que te vean.' },
+        { clase: 'monje', t: 'Moverte sin hacer ruido', d: 'Rápido, silencioso y sin armadura.' },
+      ],
+      razas: [['mediano', 'piesligeros'], ['elfo', 'bosque'], ['elfo', 'oscuro'], ['gnomo', 'bosque']], trasfondos: ['criminal', 'pilluelo', 'charlatan'],
+      hab: ['sigilo', 'manos', 'percepcion', 'engano', 'acrobacias'], conjuros: ['disfrazarse', 'ilusion', 'dormir', 'mano'] },
+    hablar: { etiqueta: 'hablar y convencer', pregunta: '¿Cómo convences a la gente?', car: ['car'],
+      rutas: [
+        { clase: 'bardo', t: 'Con encanto y música', d: 'Nadie cuenta una historia mejor que tú.' },
+        { clase: 'picaro', t: 'Mintiendo con cara seria', d: 'Engañas, negocias y sales de cualquier lío.' },
+        { clase: 'paladin', t: 'Como líder', d: 'Tu presencia inspira y tu palabra pesa.' },
+        { clase: 'hechicero', t: 'Con tu magnetismo natural', d: 'Tu carisma también alimenta tu magia.' },
+        { clase: 'brujo', t: 'Con secretos y amenazas', d: 'Sabes cosas que nadie debería saber.' },
+      ],
+      razas: [['semielfo'], ['tiflin'], ['mediano', 'piesligeros'], ['draconido']], trasfondos: ['charlatan', 'noble', 'artista'],
+      hab: ['persuasion', 'engano', 'interpretacion', 'intimidacion', 'perspicacia'], conjuros: ['hechizar', 'disfrazarse', 'burla', 'mensaje', 'ilusion', 'prestidigitacion'] },
+    distancia: { etiqueta: 'atacar a distancia', pregunta: '¿Cómo atacas desde lejos?', car: ['des'],
+      rutas: [
+        { clase: 'explorador', t: 'Con arco, como cazador', d: 'Rastreas a tu presa y aciertas desde muy lejos.' },
+        { clase: 'guerrero', opcion: 'arqueria', t: 'Como tirador experto', d: '+2 para acertar con cualquier arma a distancia.' },
+        { clase: 'picaro', t: 'Con arco y por sorpresa', d: 'Disparas desde las sombras con daño extra.' },
+        { clase: 'hechicero', t: 'Con rayos de magia', d: 'Fuego, escarcha y electricidad sin gastar flechas.' },
+        { clase: 'brujo', t: 'Con descargas sobrenaturales', d: 'Un rayo de energía fiable y sin límite de usos.' },
+      ],
+      razas: [['elfo', 'bosque'], ['mediano', 'piesligeros'], ['humano']], trasfondos: ['forastero', 'soldado', 'marinero'],
+      hab: ['percepcion', 'sigilo', 'supervivencia'], conjuros: ['proyectil', 'descarga-fuego', 'descarga-brujo', 'escarcha', 'llama-producida', 'rayo-guia'] },
+    naturaleza: { etiqueta: 'la naturaleza', pregunta: '¿Qué relación tienes con la naturaleza?', car: ['sab'],
+      rutas: [
+        { clase: 'druida', t: 'La proteges y te transformas', d: 'Usas su magia y hablas con los animales.' },
+        { clase: 'explorador', t: 'Vives en ella y cazas', d: 'Nadie se orienta ni sobrevive mejor.' },
+        { clase: 'barbaro', t: 'Eres tan salvaje como ella', d: 'Creciste lejos de las ciudades y peleas con instinto.' },
+      ],
+      razas: [['elfo', 'bosque'], ['gnomo', 'bosque'], ['semiorco']], trasfondos: ['forastero', 'ermitano', 'heroe'],
+      hab: ['naturaleza', 'animales', 'supervivencia', 'percepcion'], conjuros: ['enmaranar', 'bayas', 'druidismo', 'garrote', 'fuego-feerico'] },
+    estudio: { etiqueta: 'el estudio', pregunta: '¿Qué te gusta estudiar?', car: ['int'],
+      rutas: [
+        { clase: 'mago', t: 'La magia, en tu libro', d: 'Cada problema tiene un conjuro que lo resuelve.' },
+        { clase: 'bardo', t: 'Un poco de todo', d: 'Sabes historias y secretos de cada lugar.' },
+        { clase: 'clerigo', t: 'Los textos sagrados', d: 'Tu conocimiento se convierte en fe y en magia.' },
+      ],
+      razas: [['gnomo', 'rocas'], ['elfo', 'alto'], ['tiflin']], trasfondos: ['sabio', 'acolito', 'artesano'],
+      hab: ['arcano', 'historia', 'investigacion', 'religion', 'naturaleza'], conjuros: ['detectar', 'mano', 'prestidigitacion', 'mensaje', 'luz'] },
+    fuego: { etiqueta: 'el fuego', pregunta: '¿De dónde sale tu fuego?',
+      rutas: [
+        { clase: 'hechicero', opcion: 'draconico', t: 'De tu sangre de dragón', d: 'Tu poder es parte de ti y te da escamas protectoras.' },
+        { clase: 'brujo', opcion: 'infernal', t: 'De un pacto infernal', d: 'Un ser de los infiernos te presta sus llamas.' },
+        { clase: 'mago', t: 'De tus conjuros', d: 'Aprendes las explosiones más grandes del libro.' },
+        { clase: 'clerigo', opcion: 'luz', t: 'De tu fe', d: 'Fuego sagrado que quema a tus enemigos.' },
+      ],
+      razas: [['draconido'], ['tiflin']], trasfondos: ['sabio', 'soldado', 'ermitano'],
+      hab: ['arcano', 'intimidacion'], conjuros: ['descarga-fuego', 'manos-ardientes', 'llama-producida', 'reprension', 'llama-sagrada'] },
+    musica: { etiqueta: 'la música y el arte', car: ['car'],
+      rutas: [{ clase: 'bardo', t: 'Tu arte es tu magia', d: 'Cantas, tocas y actúas para encantar y curar.' }],
+      razas: [['semielfo'], ['mediano', 'piesligeros'], ['elfo', 'alto']], trasfondos: ['artista', 'charlatan', 'noble'],
+      hab: ['interpretacion', 'persuasion', 'engano'], conjuros: ['burla', 'hechizar', 'palabra', 'ilusion'] },
+    fe: { etiqueta: 'la fe', pregunta: '¿Cómo sirves a tu fe?',
+      rutas: [
+        { clase: 'clerigo', t: 'Como sacerdote', d: 'Tu dios te da magia para curar y proteger.' },
+        { clase: 'paladin', t: 'Como guerrero sagrado', d: 'Un juramento te da fuerza y magia.' },
+      ],
+      razas: [['enano', 'colinas'], ['humano'], ['draconido']], trasfondos: ['acolito', 'ermitano', 'sabio'],
+      hab: ['religion', 'perspicacia', 'medicina', 'persuasion'], conjuros: ['bendecir', 'escudo-fe', 'llama-sagrada', 'guia', 'rayo-guia', 'taumaturgia'] },
+    pacto: { etiqueta: 'los pactos y lo oscuro', pregunta: '¿Con quién hiciste tu pacto?',
+      rutas: [
+        { clase: 'brujo', opcion: 'infernal', t: 'Con un ser de los infiernos', d: 'Magia de fuego a cambio de un favor peligroso.' },
+        { clase: 'brujo', opcion: 'feerico', t: 'Con un noble de las hadas', d: 'Magia de encanto y engaño.' },
+        { clase: 'brujo', opcion: 'primigenio', t: 'Con una entidad antigua', d: 'Magia de la mente y secretos prohibidos.' },
+      ],
+      razas: [['tiflin'], ['semielfo'], ['elfo', 'oscuro']], trasfondos: ['ermitano', 'charlatan', 'sabio'],
+      hab: ['arcano', 'engano', 'intimidacion'], conjuros: ['reprension', 'manos-brujo', 'hechizar', 'descarga-brujo', 'ilusion'] },
+    punos: { etiqueta: 'pelear sin armas', car: ['des'],
+      rutas: [{ clase: 'monje', t: 'Con artes marciales', d: 'Tus puños son tu arma y esquivas casi todo.' }],
+      razas: [['elfo', 'bosque'], ['humano'], ['mediano', 'fornido']], trasfondos: ['ermitano', 'acolito', 'soldado'],
+      hab: ['acrobacias', 'atletismo', 'sigilo', 'perspicacia'] },
+    rapido: { etiqueta: 'ser ágil y rápido', pregunta: '¿Cómo usas tu velocidad?', car: ['des'],
+      rutas: [
+        { clase: 'monje', t: 'Para esquivar y golpear', d: 'Te mueves más que nadie y atacas varias veces.' },
+        { clase: 'picaro', t: 'Para entrar y salir sin que te toquen', d: 'Golpeas y te escondes en el mismo turno.' },
+        { clase: 'explorador', t: 'Para cruzar cualquier terreno', d: 'Nada te frena en tierras salvajes.' },
+      ],
+      razas: [['elfo', 'bosque'], ['mediano', 'piesligeros']], trasfondos: ['artista', 'pilluelo', 'forastero'],
+      hab: ['acrobacias', 'sigilo', 'atletismo'] },
+  };
+
+  // Qué gusto implica cada opción de clase: un dominio de la Vida quiere curar aunque no lo hayas escrito
+  P.GUSTO_OPCION = { vida: 'curar', luz: 'fuego', guerra: 'pegar', infernal: 'fuego', feerico: 'hablar', primigenio: 'estudio', draconico: 'fuego', salvaje: 'magia', defensa: 'aguantar', duelo: 'pegar', arqueria: 'distancia', grande: 'pegar' };
+
+  /* Lo más útil de cada clase, de mejor a peor. Es la base cuando no hay ningún gusto que incline la balanza. */
+  P.FIRMA = {
+    barbaro: { hab: ['atletismo', 'percepcion', 'intimidacion', 'supervivencia'] },
+    bardo: { hab: ['persuasion', 'engano', 'perspicacia', 'interpretacion'], magia: ['burla', 'ilusion', 'mano', 'prestidigitacion', 'palabra', 'dormir', 'curar', 'hechizar', 'fuego-feerico', 'onda', 'detectar', 'disfrazarse'] },
+    brujo: { hab: ['engano', 'arcano', 'intimidacion', 'investigacion'], magia: ['descarga-brujo', 'mano', 'ilusion', 'prestidigitacion', 'manos-brujo', 'reprension', 'hechizar'] },
+    clerigo: { hab: ['medicina', 'perspicacia', 'persuasion', 'religion'], magia: ['llama-sagrada', 'guia', 'taumaturgia', 'resistencia', 'luz', 'curar', 'palabra', 'bendecir', 'escudo-fe', 'rayo-guia', 'miedo', 'detectar'] },
+    druida: { hab: ['percepcion', 'perspicacia', 'medicina', 'naturaleza'], magia: ['llama-producida', 'guia', 'garrote', 'resistencia', 'druidismo', 'curar', 'palabra', 'enmaranar', 'fuego-feerico', 'bayas', 'onda', 'detectar', 'hechizar'] },
+    explorador: { hab: ['sigilo', 'percepcion', 'supervivencia', 'perspicacia'] },
+    guerrero: { hab: ['atletismo', 'percepcion', 'intimidacion', 'perspicacia'] },
+    hechicero: { hab: ['persuasion', 'arcano', 'engano', 'perspicacia'], magia: ['descarga-fuego', 'toque', 'escarcha', 'mano', 'mensaje', 'prestidigitacion', 'luz', 'ilusion', 'proyectil', 'escudo', 'armadura-mago', 'dormir', 'manos-ardientes', 'hechizar', 'disfrazarse', 'detectar', 'onda'] },
+    mago: { hab: ['arcano', 'investigacion', 'perspicacia', 'historia'], magia: ['descarga-fuego', 'mano', 'escarcha', 'toque', 'prestidigitacion', 'luz', 'mensaje', 'ilusion', 'proyectil', 'escudo', 'armadura-mago', 'dormir', 'manos-ardientes', 'detectar', 'onda', 'hechizar', 'disfrazarse'] },
+    monje: { hab: ['acrobacias', 'sigilo', 'perspicacia', 'atletismo'] },
+    paladin: { hab: ['persuasion', 'atletismo', 'perspicacia', 'intimidacion'] },
+    picaro: { hab: ['sigilo', 'percepcion', 'perspicacia', 'engano', 'acrobacias', 'manos'] },
+  };
 
   P.ALINEAMIENTOS = [
     { id: 'LB', nombre: 'Legal bueno', d: 'Hace lo correcto y respeta las reglas' },

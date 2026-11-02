@@ -225,21 +225,22 @@
     const con = orden[pos === 1 ? 0 : 1];
     [base[car], base[con]] = [base[con], base[car]];
   }
-  function repartoFinal(cl) {
-    const base = P.sugerirReparto(cl);
-    (E.pj.prioridades || []).forEach((c) => subirEn(base, c));
-    return base;
-  }
   function subirPrioridad(car) {
     const pj = E.pj;
     pj.prioridades = (pj.prioridades || []).filter((c) => c !== car).concat(car);
-    const cl = P.buscar(P.CLASES, pj.claseId);
+    const cl = P.buscar(P.CLASES, pj.claseId), valores = P.valoresPJ(pj);
     if (P.CARACT.every((a) => pj.base[a.id] !== null)) subirEn(pj.base, car);
-    else if (cl) pj.base = repartoFinal(cl);
+    else if (cl && valores.length === 6) pj.base = P.elegir.reparto(pj, valores).base;
   }
   function aplicarCambio(c) {
     const pj = E.pj, antes = {};
     const g = (...ks) => ks.forEach((k) => { antes[k] = JSON.parse(JSON.stringify(pj[k])); });
+    if (c.tipo === 'clase' && c.valor === pj.claseId) return; // volver a elegirla no debe borrar lo ya decidido
+    if (c.tipo === 'opcion') {
+      const cl = P.buscar(P.CLASES, pj.claseId);
+      if (!cl || !cl.opcion || !P.buscar(cl.opcion.lista, c.valor)) return;
+      g('opcionId'); pj.opcionId = c.valor;
+    }
     if (c.tipo === 'raza') { g('razaId', 'subrazaId', 'eligeCar', 'habRaza'); pj.razaId = c.valor; pj.subrazaId = null; pj.eligeCar = []; pj.habRaza = []; }
     if (c.tipo === 'subraza') { g('subrazaId'); pj.subrazaId = c.valor; }
     if (c.tipo === 'clase') { g('claseId', 'habClase', 'opcionId', 'pericia', 'kitId', 'trucos', 'conjuros'); elegirClase(c.valor); }
@@ -247,6 +248,12 @@
     if (c.tipo === 'nombre') { g('nombre'); pj.nombre = c.valor; }
     if (c.tipo === 'prioridad') { g('base', 'prioridades'); subirPrioridad(c.valor); }
     if (['rasgo', 'ideal', 'vinculo', 'defecto'].includes(c.tipo)) { g(c.tipo); pj[c.tipo] = c.valor; }
+    // Cambiar de idea reemplaza la elección anterior: Quitar debe volver a como estaba antes de ambas
+    if (['raza', 'subraza', 'clase', 'opcion', 'trasfondo'].includes(c.tipo)) {
+      const sustituye = (a) => a.tipo === c.tipo || (c.tipo === 'clase' && a.tipo === 'opcion') || (c.tipo === 'raza' && a.tipo === 'subraza');
+      E.activos.filter(sustituye).forEach((a) => Object.assign(antes, a.antes));
+      E.activos = E.activos.filter((a) => !sustituye(a));
+    }
     E.activos.unshift({ texto: c.texto, tipo: c.tipo, antes, id: Date.now() + Math.random() });
   }
   function elegirClase(id) {
@@ -258,25 +265,38 @@
     $('activos-vacio').hidden = E.activos.length > 0;
     $('lista-activos').innerHTML = E.activos.map((a) => `<li class="activo"><span>${P.esc(a.texto)}</span><button type="button" class="btn btn-secundario btn-sm" data-accion="quitar-activo" data-valor="${a.id}" aria-label="Quitar: ${P.esc(a.texto)}">Quitar</button></li>`).join('');
   }
-  function pintarPropuesta(r, origen) {
+  const GRUPOS_REC = [['recomendaciones', 'Clases'], ['razas', 'Razas'], ['trasfondos', 'Trasfondos']];
+  function esElegida(x) {
+    const pj = E.pj, actual = { clase: pj.claseId, opcion: pj.opcionId, raza: pj.razaId, subraza: pj.subrazaId, trasfondo: pj.trasfondoId };
+    return x.cambios.every((c) => actual[c.tipo] === c.valor);
+  }
+  function pintarRecomendaciones() {
+    const r = E.propuesta;
+    if (!r) return;
+    $('lista-recomendaciones').innerHTML = GRUPOS_REC.filter(([k]) => r[k].length).map(([k, t]) => `<h4 class="grupo-rec">${t}</h4><div class="recomendaciones">${r[k].map((x, i) => {
+      const on = esElegida(x);
+      return `<div class="recomendacion${on ? ' elegida' : ''}"><span class="ico"${x.color ? ` style="color:${x.color}"` : ''}>${P.ico(x.icono)}</span><div><strong>${P.esc(x.nombre)}</strong><p>${P.esc(x.por)}</p></div><button type="button" class="btn btn-secundario btn-sm" data-accion="usar-rec" data-grupo="${k}" data-valor="${i}" aria-label="Usar ${P.esc(x.nombre)}" aria-pressed="${on}">${on ? 'Elegida' : 'Usar'}</button></div>`;
+    }).join('')}</div>`).join('');
+  }
+  function pintarPropuesta(r) {
     E.propuesta = r;
-    const hay = r.cambios.length || r.dudas.length;
+    const hay = r.cambios.length || r.dudas.length, hayRec = GRUPOS_REC.some(([k]) => r[k].length);
     $('propuesta').hidden = !hay;
     $('propuesta-respuesta').hidden = !r.respuesta;
-    $('propuesta-respuesta').textContent = r.respuesta ? 'Gemini: ' + r.respuesta : '';
+    $('propuesta-respuesta').textContent = r.respuesta ? (r.ia ? 'Gemini: ' : '') + r.respuesta : '';
     $('lista-propuesta').innerHTML = r.cambios.map((c, i) => `<li><label class="casilla" for="prop-${i}"><input type="checkbox" id="prop-${i}" checked><span>${P.esc(c.texto)}</span></label></li>`).join('');
     $('lista-dudas').innerHTML = r.dudas.map((d) => `<li class="duda">${P.esc(d)}</li>`).join('');
     $('btn-confirmar').hidden = !r.cambios.length;
-    $('recomendaciones').hidden = !r.recomendaciones.length;
-    $('lista-recomendaciones').innerHTML = r.recomendaciones.map((x) => {
-      const c = P.buscar(P.CLASES, x.id);
-      return `<div class="recomendacion"><span class="ico" style="color:${c.color}">${P.ico(c.icono)}</span><div><strong>${P.esc(x.nombre)}</strong><p>${P.esc(x.por)}</p></div><button type="button" class="btn btn-secundario btn-sm" data-accion="usar-clase" data-valor="${x.id}" aria-label="Usar ${P.esc(x.nombre)}">Usar</button></div>`;
-    }).join('');
+    $('recomendaciones').hidden = !hayRec;
+    $('recomendaciones-pregunta').hidden = !r.pregunta;
+    $('recomendaciones-pregunta').textContent = r.pregunta || '';
+    pintarRecomendaciones();
     const est = $('estado-asistente');
     est.className = 'estado';
-    est.textContent = r.cambios.length ? 'Revisa lo que entendí y aplícalo.' : r.recomendaciones.length ? 'Estas clases encajan con lo que pides.' : '';
-    void origen;
+    est.textContent = r.cambios.length ? 'Revisa lo que entendí y aplícalo.' : hayRec ? 'Elige la opción que más te guste.' : '';
   }
+  // Recuerda lo que la persona ha contado: orienta a Gemini y a «Elegir por mí»
+  const recordar = (previo, texto) => (previo.includes(texto) ? previo : (previo ? previo + '. ' : '') + texto).slice(-300);
   async function revisar() {
     const texto = $('texto-asistente').value.trim();
     const est = $('estado-asistente');
@@ -285,11 +305,19 @@
     btn.disabled = true;
     let r = null, nota = '';
     try {
+      E.pj.concepto = recordar(E.pj.concepto, texto);
+      guardar();
+      const local = P.interpretar(texto, E.pj);
       if (P.ia.lista()) {
         est.className = 'estado'; est.textContent = 'Consultando a Gemini…';
-        try { r = await P.ia.interpretar(texto, E.pj); } catch (e) { nota = e.message + ' Lo revisé sin IA.'; }
+        try {
+          r = await P.ia.interpretar(texto, E.pj);
+          // Si Gemini deja una lista vacía, se completa con las opciones locales
+          GRUPOS_REC.forEach(([k]) => { if (!r[k].length) r[k] = local[k]; });
+          r.pregunta = r.pregunta || local.pregunta;
+        } catch (e) { nota = e.message + ' Lo revisé sin IA.'; }
       }
-      if (!r) r = P.interpretar(texto, E.pj);
+      if (!r) r = local;
       pintarPropuesta(r);
       if (nota) { est.className = 'estado error'; est.textContent = nota; }
       const visible = [$('propuesta'), $('recomendaciones')].find((s) => !s.hidden);
@@ -307,14 +335,16 @@
     const est = $('estado-asistente');
     est.className = 'estado ok';
     est.textContent = elegidos.length === 1 ? 'Cambio aplicado.' : `${elegidos.length} cambios aplicados.`;
-    pintarActivos(); refrescar();
+    pintarActivos(); refrescar(); pintarRecomendaciones();
   }
-  function usarClase(id) {
-    const cl = P.buscar(P.CLASES, id);
-    aplicarCambio({ tipo: 'clase', valor: id, texto: 'Tu clase: ' + cl.nombre });
-    $('recomendaciones').hidden = true;
-    const est = $('estado-asistente'); est.className = 'estado ok'; est.textContent = `Ahora eres ${cl.nombre}.`;
-    pintarActivos(); refrescar();
+  function usarRecomendacion(grupo, i) {
+    const x = E.propuesta && E.propuesta[grupo] && E.propuesta[grupo][i];
+    if (!x) return;
+    P.validarCambios(x.cambios, E.pj).cambios.forEach(aplicarCambio);
+    const est = $('estado-asistente'); est.className = 'estado ok'; est.textContent = `Elegiste ${x.nombre}.`;
+    pintarActivos(); refrescar(); pintarRecomendaciones();
+    const b = document.querySelector(`[data-accion="usar-rec"][data-grupo="${grupo}"][data-valor="${i}"]`);
+    if (b) b.focus({ preventScroll: true });
   }
   function quitarActivo(id) {
     const i = E.activos.findIndex((a) => String(a.id) === String(id));
@@ -322,8 +352,24 @@
     Object.assign(E.pj, E.activos[i].antes);
     const texto = E.activos[i].texto;
     E.activos.splice(i, 1);
-    aplicarAcento(); pintarActivos(); refrescar();
+    aplicarAcento(); pintarActivos(); refrescar(); pintarRecomendaciones();
     $('estado-asistente').className = 'estado'; $('estado-asistente').textContent = 'Quitado: ' + texto;
+  }
+
+  /* ---------- Elegir por mí ---------- */
+  // Con Gemini pide la mejor opción. Sin clave, o si falla o propone algo inválido, usa la elección local.
+  async function elegirPorMi(tipo, boton, local, aplicar, extra) {
+    const claseAntes = E.pj.claseId, razaAntes = E.pj.razaId;
+    let r = local, nota = '';
+    if (P.ia.lista()) {
+      boton.disabled = true; boton.setAttribute('aria-busy', 'true');
+      decir('Consultando a Gemini…');
+      try { r = await P.ia.elegir(tipo, E.pj, extra); } catch (e) { nota = ' ' + e.message + ' Lo elegí sin IA.'; }
+      boton.disabled = false; boton.removeAttribute('aria-busy');
+      if (E.pj.claseId !== claseAntes || E.pj.razaId !== razaAntes) return; // cambió el personaje mientras esperaba
+    }
+    aplicar(r);
+    if (r.por || nota) decir((r.por + nota).trim());
   }
 
   // Dictado por voz
@@ -386,6 +432,12 @@
     c.width = ancho; c.height = Math.round((ancho * P.HOJA_H) / P.HOJA_W);
     P.hoja.dibujar(c, pjHoja, { tema: E.hoja.tema, pagina: E.hoja.pagina });
   }
+  // La hoja en blanco y negro puede tener una página más, para notas
+  function pintarPaginas() {
+    const lista = P.hoja.paginas(pjHoja, E.hoja.tema);
+    if (!lista.includes(E.hoja.pagina)) E.hoja.pagina = 1;
+    $('hoja-paginas').innerHTML = lista.map((n) => `<input type="radio" class="btn-check" name="hoja-pagina" id="hp-${n}" value="${n}"${E.hoja.pagina === n ? ' checked' : ''}><label for="hp-${n}">Página ${n}</label>`).join('');
+  }
   function resumenHoja(pj, c) {
     return [pj.nombre || 'Personaje sin nombre', c.nombreRaza, c.clase && c.clase.nombre, 'nivel ' + c.nivel, c.ca.valor !== null ? 'defensa ' + c.ca.valor : '', c.pgMax !== null ? 'vida ' + c.pgMax : ''].filter(Boolean).join(', ') + '. Todos los datos aparecen en los botones de tiradas.';
   }
@@ -401,18 +453,17 @@
           <div class="segmento" role="radiogroup" aria-label="Estilo de la hoja">
             <input type="radio" class="btn-check" name="hoja-tema" id="ht-noche" value="noche"${E.hoja.tema === 'noche' ? ' checked' : ''}><label for="ht-noche">Noche</label>
             <input type="radio" class="btn-check" name="hoja-tema" id="ht-pergamino" value="pergamino"${E.hoja.tema === 'pergamino' ? ' checked' : ''}><label for="ht-pergamino">Pergamino</label>
+            <input type="radio" class="btn-check" name="hoja-tema" id="ht-byn" value="byn"${E.hoja.tema === 'byn' ? ' checked' : ''}><label for="ht-byn">Blanco y negro</label>
           </div>
-          <div class="segmento" role="radiogroup" aria-label="Página">
-            <input type="radio" class="btn-check" name="hoja-pagina" id="hp-1" value="1"${E.hoja.pagina === 1 ? ' checked' : ''}><label for="hp-1">Página 1</label>
-            <input type="radio" class="btn-check" name="hoja-pagina" id="hp-2" value="2"${E.hoja.pagina === 2 ? ' checked' : ''}><label for="hp-2">Página 2</label>
-          </div>
+          <div class="segmento" id="hoja-paginas" role="radiogroup" aria-label="Página"></div>
         </div>
         <div class="hoja-lienzo"><canvas id="hoja-lienzo" role="img" aria-label="${P.esc(resumenHoja(pj, c))}"></canvas></div>
       </div>
       <div>
         <h3 class="h5">Descarga tu hoja</h3>
         <div class="descargas">
-          <button type="button" class="descarga prim" data-accion="descargar" data-valor="pdf"><span class="ico">${P.ico('pergamino')}</span><span>PDF<small>Dos páginas, lista para imprimir</small></span></button>
+          <button type="button" class="descarga prim" data-accion="descargar" data-valor="pdf"><span class="ico">${P.ico('pergamino')}</span><span>PDF<small>Con el estilo que elegiste</small></span></button>
+          <button type="button" class="descarga" data-accion="imprimir"><span class="ico">${P.ico('libro')}</span><span>Imprimir en blanco y negro<small>Sin fondos y con recuadros para anotar a lápiz</small></span></button>
           <button type="button" class="descarga" data-accion="descargar" data-valor="jpeg"><span class="ico">${P.ico('pluma')}</span><span>JPEG<small>Una imagen para tu galería</small></span></button>
           ${opciones.visor ? '' : `<button type="button" class="descarga" data-accion="abrir-qr"><span class="ico">${P.ico('dados')}</span><span>Código QR<small>Ábrela en tu celular</small></span></button>`}
           ${compartir ? `<button type="button" class="descarga" data-accion="compartir"><span class="ico">${P.ico('mano')}</span><span>Compartir<small>Guárdala o envíala desde tu teléfono</small></span></button>` : ''}
@@ -424,9 +475,10 @@
     <section class="bloque" aria-labelledby="t-rollos"><h3 id="t-rollos">Prueba tus tiradas</h3><p class="ayuda">Toca cualquier botón y se lanzan los dados con tu bono. Los marcados son en los que estás entrenado.</p>
       ${atk ? `<h4 class="h6 mt-3">Ataques</h4><div class="rollos">${atk}</div>` : ''}
       <h4 class="h6 mt-3">Salvaciones</h4><div class="rollos">${P.CARACT.map((a) => rollo(a.nombre, c.salvaciones[a.id].bono, `data-tipo="salvacion" data-valor="${a.id}"`, c.salvaciones[a.id].comp)).join('')}</div>
-      <h4 class="h6 mt-3">Habilidades</h4><div class="rollos">${c.habilidades.map((h) => rollo(h.nombre, h.bono, `data-tipo="habilidad" data-valor="${h.id}"`, h.comp)).join('')}</div>
+      <h4 class="h6 mt-3">Habilidades</h4><div class="rollos">${c.habilidades.map((h) => rollo(P.nombreHab(h.id), h.bono, `data-tipo="habilidad" data-valor="${h.id}"`, h.comp)).join('')}</div>
       <h4 class="h6 mt-3">Combate</h4><div class="rollos">${rollo('Iniciativa', c.iniciativa, 'data-tipo="iniciativa"', false)}</div>
     </section>`;
+    pintarPaginas();
     P.hoja.listas().then(pintarLienzo);
   }
   function tirarRollo(b) {
@@ -452,12 +504,29 @@
     try {
       let blob, nombre;
       if (tipo === 'jpeg') { blob = await P.crearJPEG(pj, E.hoja.tema); nombre = P.nombreArchivo(pj, 'jpg'); }
-      else { blob = await P.crearPDF(pj, tipo === 'blanco' ? 'pergamino' : E.hoja.tema); nombre = tipo === 'blanco' ? 'hoja-en-blanco.pdf' : P.nombreArchivo(pj, 'pdf'); }
+      else { blob = await P.crearPDF(pj, tipo === 'blanco' ? 'byn' : E.hoja.tema); nombre = tipo === 'blanco' ? 'hoja-en-blanco.pdf' : P.nombreArchivo(pj, 'pdf'); }
       await P.guardarArchivo(blob, nombre);
       P.avisar('Listo: ' + nombre);
     } catch (e) {
       if (!e || e.code !== 'declined') P.avisar('No se pudo crear el archivo. Intenta de nuevo.');
     } finally { boton.removeAttribute('aria-busy'); }
+  }
+  // Siempre en blanco y negro, sea cual sea el estilo que se ve en pantalla
+  async function imprimir(boton) {
+    boton.setAttribute('aria-busy', 'true');
+    try {
+      await P.hoja.listas();
+      const imagenes = await Promise.all(P.hoja.paginas(pjHoja, 'byn').map(async (pagina) => {
+        const img = new Image();
+        img.alt = 'Página ' + pagina + ' de la hoja de personaje';
+        img.src = P.hoja.lienzo(pjHoja, { tema: 'byn', pagina, escala: 1.5 }).toDataURL('image/png');
+        await img.decode();
+        return img;
+      }));
+      $('zona-impresion').replaceChildren(...imagenes);
+      window.print();
+    } catch (e) { P.avisar('No se pudo preparar la impresión. Elige Blanco y negro y descarga el PDF.'); }
+    boton.removeAttribute('aria-busy');
   }
   async function compartir(boton) {
     boton.setAttribute('aria-busy', 'true');
@@ -568,11 +637,8 @@
   }
 
   /* ---------- Eventos ---------- */
-  function cambiarPuntuacion(k, v) {
-    const pj = E.pj;
-    const otra = P.CARACT.map((a) => a.id).find((x) => x !== k && pj.base[x] === v);
-    if (otra && v !== null) pj.base[otra] = pj.base[k];
-    pj.base[k] = v;
+  function cambiarPuntuacion(k, v, de) {
+    E.pj.base = P.asignarPuntuacion(E.pj.base, k, v, de);
     E.ui.popCar = k;
   }
   const ACCIONES = {
@@ -590,19 +656,12 @@
     'mision-sig'() { E.tut.i += 1; E.tut.res = null; pintarRiel(); refrescar(); const h = $('paso').querySelector('h1'); if (h) h.focus(); },
     'repetir-tut'() { E.tut = { i: 0, res: null }; pintarRiel(); refrescar(); },
     filtro(e, b) { E.ui.filtro = b.dataset.valor; refrescar(); const n = document.querySelectorAll('[name=clase]').length; $('cuenta-clases').textContent = n + ' clases'; document.querySelector(`[data-accion=filtro][data-valor=${b.dataset.valor}]`).focus(); },
-    'auto-hab'() {
-      const c = P.calcular(E.pj), cl = c.clase;
-      const previas = new Set([...(c.raza && c.raza.habilidades || []), ...E.pj.habRaza]);
-      const lista = (cl.hab === 'todas' ? P.HABILIDADES.map((h) => h.id) : cl.hab).filter((h) => !previas.has(h));
-      const claves = Object.entries(cl.reparto).sort((a, b) => b[1] - a[1]).map((x) => x[0]);
-      lista.sort((a, b) => claves.indexOf(P.buscar(P.HABILIDADES, a).car) - claves.indexOf(P.buscar(P.HABILIDADES, b).car));
-      E.pj.habClase = lista.slice(0, cl.nHab);
-      if (cl.pericia) E.pj.pericia = E.pj.habClase.slice(0, cl.pericia);
-      refrescar();
+    'auto-hab'(e, b) {
+      elegirPorMi('habilidades', b, P.elegir.habilidades(E.pj), (r) => { E.pj.habClase = r.habClase; E.pj.pericia = r.pericia; refrescar(); });
     },
-    'auto-reparto'() {
-      const cl = P.buscar(P.CLASES, E.pj.claseId);
-      E.pj.metodo = 'matriz'; E.pj.base = repartoFinal(cl); refrescar();
+    'auto-reparto'(e, b) {
+      const valores = P.valoresPJ(E.pj);
+      elegirPorMi('reparto', b, P.elegir.reparto(E.pj, valores), (r) => { E.pj.base = r.base; refrescar(); }, valores);
     },
     compra(e, b) {
       const k = b.dataset.car, pj = E.pj, d = +b.dataset.delta, base = Object.fromEntries(P.CARACT.map((a) => [a.id, pj.base[a.id] ?? 8]));
@@ -625,21 +684,22 @@
       } });
     },
     'reiniciar-tiradas'() { E.pj.tiradas = []; E.pj.base = Object.fromEntries(P.CARACT.map((a) => [a.id, null])); refrescar(); },
-    'auto-magia'() {
-      const c = P.calcular(E.pj), id = c.clase.id, p = c.magia.permitidos;
-      const de = (n) => P.CONJUROS.filter((s) => s.nivel === n && s.clases.includes(id));
-      const trucos = de(0).sort((a, b) => (b.ataque ? 1 : 0) - (a.ataque ? 1 : 0)).slice(0, p.trucos).map((s) => s.id);
-      const conjuros = de(1).slice(0, p.conjuros).map((s) => s.id);
-      E.pj.trucos = trucos; E.pj.conjuros = conjuros; refrescar();
+    'auto-magia'(e, b) {
+      elegirPorMi('magia', b, P.elegir.magia(E.pj), (r) => { E.pj.trucos = r.trucos; E.pj.conjuros = r.conjuros; refrescar(); });
     },
     sugerir(e, b) {
       const k = b.dataset.valor;
       const lista = k === 'nombre' ? (P.NOMBRES[E.pj.razaId] || P.NOMBRES.humano) : P.PERSONALIDAD[k];
-      const nuevo = lista.filter((x) => x !== E.pj[k])[P.azar(lista.length - 1) - 1] || lista[0];
-      E.pj[k] = nuevo; $('c-' + k).value = nuevo; decir(P.PASOS[indice(E.paso)].guia(E)); pintarVivo(); guardar();
+      const local = { texto: lista.filter((x) => x !== E.pj[k])[P.azar(lista.length - 1) - 1] || lista[0], por: '' };
+      elegirPorMi('sugerir', b, local, (r) => {
+        E.pj[k] = r.texto;
+        const campo = $('c-' + k);
+        if (campo) campo.value = r.texto;
+        decir(P.PASOS[indice(E.paso)].guia(E)); pintarVivo(); guardar();
+      }, k);
     },
     confirmar: confirmarPropuesta,
-    'usar-clase'(e, b) { usarClase(b.dataset.valor); },
+    'usar-rec'(e, b) { usarRecomendacion(b.dataset.grupo, +b.dataset.valor); },
     'quitar-activo'(e, b) { quitarActivo(b.dataset.valor); },
     'probar-ia': probarIA,
     'ver-clave'(e, b) {
@@ -649,6 +709,7 @@
     escuchar() { hablar(ultimoNarrado); },
     rollo(e, b) { tirarRollo(b); },
     descargar(e, b) { descargar(b.dataset.valor, b); },
+    imprimir(e, b) { imprimir(b); },
     compartir(e, b) { compartir(b); },
     'abrir-qr'() { $('qr-url').value = leer(CLAVE_URL, ''); new bootstrap.Modal($('modal-qr')).show(); pintarQR(); },
     async 'copiar-enlace'() {
@@ -665,7 +726,7 @@
     importar() { E.pj = pjHoja; E.paso = 'hoja'; E.activos = []; aplicarAcento(); irPaso('hoja'); P.avisar('Guardado en este dispositivo.'); },
     'borrar-todo'() {
       E.pj = P.pjVacio(); E.activos = []; E.tut = { i: 0, res: null }; E.paso = 'aprende'; E.propuesta = null;
-      aplicarAcento(); pintarActivos(); $('propuesta').hidden = true; $('recomendaciones').hidden = true;
+      aplicarAcento(); pintarActivos(); $('propuesta').hidden = true; $('recomendaciones').hidden = true; $('propuesta-respuesta').hidden = true;
       try { localStorage.removeItem(CLAVE_ESTADO); } catch (x) { /* sin almacenamiento */ }
       irPaso('aprende');
     },
@@ -701,7 +762,7 @@
     else if (n === 'metodo') {
       pj.metodo = t.value;
       pj.base = Object.fromEntries(P.CARACT.map((a) => [a.id, t.value === 'compra' ? 8 : null]));
-    } else if (t.dataset.car) cambiarPuntuacion(t.dataset.car, t.value === '' ? null : +t.value);
+    } else if (t.dataset.car) cambiarPuntuacion(t.dataset.car, t.value === '' ? null : +t.value, t.selectedOptions[0].dataset.de);
     else if (['habClase', 'eligeCar', 'habRaza', 'pericia', 'habExtra', 'trucos', 'conjuros'].includes(n)) {
       const max = +t.closest('.casillas').dataset.max;
       const lista = pj[n];
@@ -724,7 +785,7 @@
   });
   document.addEventListener('change', (e) => {
     const t = e.target;
-    if (t.name === 'hoja-tema') { E.hoja.tema = t.value; pintarLienzo(); guardar(); }
+    if (t.name === 'hoja-tema') { E.hoja.tema = t.value; pintarPaginas(); pintarLienzo(); guardar(); }
     if (t.name === 'hoja-pagina') { E.hoja.pagina = +t.value; pintarLienzo(); guardar(); }
     if (t.name === 'tema') { P.prefs.tema = t.value; prefsCambiadas(); }
     if (t.name === 'letra') { P.prefs.letra = t.value; prefsCambiadas(); }
@@ -771,6 +832,7 @@
   $('panel-asistente').addEventListener('show.bs.offcanvas', () => $('asistente-casa').append(asistente()));
   $('panel-asistente').addEventListener('hidden.bs.offcanvas', () => { const a = $('ancla-asistente'); if (a) a.append(asistente()); });
   $('modal-nivel').addEventListener('hidden.bs.modal', () => { N.golpe = null; });
+  window.addEventListener('afterprint', () => $('zona-impresion').replaceChildren());
   let reloj2 = null;
   window.addEventListener('resize', () => { clearTimeout(reloj2); reloj2 = setTimeout(pintarLienzo, 200); });
 

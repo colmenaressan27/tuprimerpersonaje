@@ -8,7 +8,7 @@
     claseId: null, habClase: [], opcionId: null, pericia: [], metodo: 'matriz', base: vacioCar(null), tiradas: [],
     trasfondoId: null, habExtra: [], kitId: null, trucos: [], conjuros: [],
     alineamiento: '', rasgo: '', ideal: '', vinculo: '', defecto: '', idiomas: '', notas: '',
-    nivel: 1, ganadosPG: [], mejoras: [], px: 0, prioridades: [],
+    nivel: 1, ganadosPG: [], mejoras: [], px: 0, prioridades: [], concepto: '',
   });
 
   P.mod = (s) => Math.floor((s - 10) / 2);
@@ -18,6 +18,24 @@
   P.nivelesDeMejora = (claseId) => P.NIVELES_MEJORA.concat(P.MEJORAS_EXTRA[claseId] || []).sort((a, b) => a - b);
 
   P.sugerirReparto = (clase) => Object.assign({}, clase.reparto);
+
+  // Un renglón por cada número disponible, repetidos incluidos, y a qué característica está asignado
+  P.opcionesPuntuacion = function (valores, base, car) {
+    const filas = valores.map((valor) => ({ valor, de: null }));
+    [car].concat(IDS.filter((k) => k !== car)).forEach((k) => {
+      const libre = filas.find((f) => f.valor === base[k] && !f.de);
+      if (libre) libre.de = k;
+    });
+    return filas.sort((a, b) => b.valor - a.valor || Number(!!a.de) - Number(!!b.de));
+  };
+
+  // Pone un número en una característica. Si ese número estaba en otra, las dos se intercambian.
+  P.asignarPuntuacion = function (base, car, valor, de) {
+    const nueva = Object.assign({}, base);
+    if (de && de !== car) nueva[de] = base[car];
+    nueva[car] = valor;
+    return nueva;
+  };
 
   // Cuántos conjuros de nivel 1 elige la clase al crearse
   P.conjurosPermitidos = (clase, modMagia, nivel = 1) => {

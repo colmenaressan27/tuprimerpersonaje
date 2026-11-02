@@ -6,6 +6,8 @@
   const TEMAS = {
     noche: { a: '#2C2042', b: '#0C0814', tarjeta: 'rgba(255,255,255,.06)', borde: 'rgba(233,200,124,.42)', texto: '#F8F1E2', tenue: '#C9BEAC', oro: '#EBCB82', linea: 'rgba(233,200,124,.24)', sello: '#FFF8E8', grano: 'rgba(255,255,255,.045)', anillos: 0.11 },
     pergamino: { a: '#FCF6E8', b: '#EADDC0', tarjeta: 'rgba(255,255,255,.66)', borde: 'rgba(120,86,22,.55)', texto: '#2A2016', tenue: '#5C4D39', oro: '#7A5812', linea: 'rgba(120,86,22,.3)', sello: '#FFFAEE', grano: 'rgba(90,60,20,.05)', anillos: 0.1 },
+    // Para la impresora: tinta negra sobre papel blanco, sin fondos, y con espacio para anotar a lápiz
+    byn: { tarjeta: '#FFFFFF', borde: '#000000', texto: '#000000', tenue: '#333333', oro: '#000000', linea: '#8C8C8C', sello: '#000000', plano: true },
   };
   const familia = { disp: 'Almendra, Georgia, serif', grab: 'Cinzel, "Times New Roman", serif', txt: '"Figtree Variable", "Segoe UI", system-ui, sans-serif' };
 
@@ -84,6 +86,7 @@
 
   function fondo(d) {
     const { ctx, t, acento } = d;
+    if (t.plano) { ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H); return; }
     const g = ctx.createRadialGradient(W / 2, 260, 120, W / 2, 760, 1650);
     g.addColorStop(0, t.a); g.addColorStop(1, t.b);
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
@@ -133,12 +136,16 @@
     const { ctx, t, acento } = d;
     ctx.save();
     // Halo y anillos
-    const halo = ctx.createRadialGradient(cx, cy, r * 0.6, cx, cy, r * 1.35);
-    halo.addColorStop(0, acento + '66'); halo.addColorStop(1, acento + '00');
-    ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(cx, cy, r * 1.35, 0, Math.PI * 2); ctx.fill();
-    const disco = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
-    disco.addColorStop(0, mezclar(acento, '#FFFFFF', 0.18)); disco.addColorStop(0.55, acento); disco.addColorStop(1, mezclar(acento, '#000000', 0.5));
-    ctx.fillStyle = disco; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+    if (t.plano) ctx.fillStyle = '#FFFFFF';
+    else {
+      const halo = ctx.createRadialGradient(cx, cy, r * 0.6, cx, cy, r * 1.35);
+      halo.addColorStop(0, acento + '66'); halo.addColorStop(1, acento + '00');
+      ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(cx, cy, r * 1.35, 0, Math.PI * 2); ctx.fill();
+      const disco = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+      disco.addColorStop(0, mezclar(acento, '#FFFFFF', 0.18)); disco.addColorStop(0.55, acento); disco.addColorStop(1, mezclar(acento, '#000000', 0.5));
+      ctx.fillStyle = disco;
+    }
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = t.oro; ctx.lineWidth = r * 0.05; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
     ctx.lineWidth = r * 0.012; ctx.beginPath(); ctx.arc(cx, cy, r * 0.88, 0, Math.PI * 2); ctx.stroke();
     for (let i = 0; i < 40; i++) {
@@ -147,12 +154,12 @@
       ctx.lineWidth = r * 0.016; ctx.stroke();
     }
     const tam = r * 1.2;
-    ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = r * 0.1; ctx.shadowOffsetY = r * 0.03;
+    if (!t.plano) { ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = r * 0.1; ctx.shadowOffsetY = r * 0.03; }
     icono(d, c.clase ? c.clase.icono : 'd20', cx - tam / 2, cy - tam / 2, tam, t.sello);
     ctx.restore();
     if (c.raza) {
       const rr = r * 0.36, bx = cx + r * 0.74, by = cy + r * 0.74;
-      ctx.fillStyle = d.oscuro ? '#17101F' : '#FBF4E2';
+      ctx.fillStyle = t.plano ? '#FFFFFF' : d.oscuro ? '#17101F' : '#FBF4E2';
       ctx.beginPath(); ctx.arc(bx, by, rr, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = t.oro; ctx.lineWidth = r * 0.03; ctx.stroke();
       icono(d, c.raza.icono, bx - rr * 0.72, by - rr * 0.72, rr * 1.44, t.oro);
@@ -192,6 +199,10 @@
     for (let i = 1; i <= n; i++) { ctx.beginPath(); ctx.moveTo(x, y + i * lh); ctx.lineTo(x + ancho, y + i * lh); ctx.stroke(); }
   }
 
+  function pie(d) {
+    escribir(d, 'Tu Primer Personaje · Reglas del SRD 5.1 (CC BY 4.0) · Iconos de game-icons.net (CC BY 3.0)', W / 2, H - 62, { p: 17, a: 'center', c: d.t.tenue });
+  }
+
   /* ---------- Página 1 ---------- */
   function pagina1(d, pj, c) {
     const { t, ctx } = d;
@@ -205,7 +216,9 @@
     if (sub) escribir(d, sub, xN, 252, { p: 42, b: 600, c: t.tenue, max: anchoN });
     filete(d, xN, W - M, 286);
 
-    const meta = [['Trasfondo', c.trasfondo && c.trasfondo.nombre], ['Alineamiento', pj.alineamiento], ['Jugador', pj.jugador], ['Experiencia', pj.nombre || pj.px ? (pj.px || 0) + ' PX' : '']];
+    // En papel, los puntos de experiencia que aún no tienes se dejan en blanco para irlos anotando
+    const px = pj.px ? pj.px + ' PX' : pj.nombre && !t.plano ? '0 PX' : '';
+    const meta = [['Trasfondo', c.trasfondo && c.trasfondo.nombre], ['Alineamiento', pj.alineamiento], ['Jugador', pj.jugador], ['Experiencia', px]];
     const mw = (anchoN - 3 * 16) / 4;
     meta.forEach(([k, v], i) => {
       const x = xN + i * (mw + 16);
@@ -222,7 +235,7 @@
       const g = ctx.createLinearGradient(0, gy, 0, gy + gh);
       g.addColorStop(0, d.acento + (d.oscuro ? '4D' : '38')); g.addColorStop(0.55, d.acento + '0A');
       ctx.fillStyle = t.tarjeta; ctx.fill();
-      ctx.fillStyle = g; ctx.fill();
+      if (!t.plano) { ctx.fillStyle = g; ctx.fill(); }
       ctx.lineWidth = 2.5; ctx.strokeStyle = t.borde; ctx.stroke();
       icono(d, a.id, x + 18, gy + 16, 40, t.oro);
       escribir(d, a.abrev, x + gw - 18, gy + 50, { f: 'grab', p: 32, c: t.oro, a: 'right', esp: 1 });
@@ -243,6 +256,16 @@
       const x = M + i * (gw + sep);
       tarjeta(d, x, vy, gw, vh);
       icono(d, id, x + 16, vy + 16, 34, d.acentoTexto);
+      if (id === 'pg' && t.plano) {
+        // La vida baja y sube en la partida: la máxima impresa y un recuadro libre para la actual
+        escribir(d, 'Vida', x + 58, vy + 42, { p: 23, b: 600, c: t.tenue });
+        escribir(d, 'Máxima', x + 14, vy + 78, { p: 18, c: t.tenue });
+        if (v !== null && v !== undefined) escribir(d, v, x + 46, vy + 128, { f: 'grab', p: 44, a: 'center' });
+        const xA = x + 92, wA = gw - 104;
+        ctx.strokeStyle = t.borde; ctx.lineWidth = 2; ctx.strokeRect(xA, vy + 54, wA, vh - 66);
+        escribir(d, 'Actual', xA + 8, vy + 74, { p: 18, c: t.tenue });
+        return;
+      }
       escribir(d, k, x + 58, vy + 42, { p: 23, b: 600, c: t.tenue, max: gw - 70 });
       if (v !== null && v !== undefined && v !== '') escribir(d, v, x + gw / 2, vy + 122, { f: 'grab', p: String(v).length > 4 ? 46 : 62, a: 'center' });
     });
@@ -334,7 +357,7 @@
       escribir(d, a, x + 18, yC + 40, { f: 'disp', p: 30, c: t.oro, max: wC - 30 });
       parrafo(d, b, x + 18, yC + 76, wC - 34, 29, { p: 22, maxLineas: 4 });
     });
-    escribir(d, 'Tu Primer Personaje · Reglas del SRD 5.1 (CC BY 4.0) · Iconos de game-icons.net (CC BY 3.0)', W / 2, H - 62, { p: 17, a: 'center', c: t.tenue });
+    pie(d);
   }
 
   /* ---------- Página 2 ---------- */
@@ -350,9 +373,11 @@
     const y1 = 304, hR = 560, wR = 600;
     ctx.setLineDash([12, 10]); ctx.strokeStyle = t.borde; ctx.lineWidth = 2;
     gema(ctx, M, y1, wR, hR, 18); ctx.stroke(); ctx.setLineDash([]);
-    ctx.save(); ctx.globalAlpha = 0.09;
-    icono(d, c.clase ? c.clase.icono : 'd20', M + wR / 2 - 190, y1 + hR / 2 - 190, 380, t.oro);
-    ctx.restore();
+    if (!t.plano) {
+      ctx.save(); ctx.globalAlpha = 0.09;
+      icono(d, c.clase ? c.clase.icono : 'd20', M + wR / 2 - 190, y1 + hR / 2 - 190, 380, t.oro);
+      ctx.restore();
+    }
     escribir(d, 'DIBUJA A TU PERSONAJE', M + wR / 2, y1 + hR - 26, { f: 'grab', p: 22, a: 'center', c: t.tenue });
 
     const xH = M + wR + 18, wH = (W - M - xH - 18) / 2, hH = (hR - 18) / 2;
@@ -382,7 +407,9 @@
       const w = (wM - 2 * 14) / 3, x = M + i * (w + 14);
       tarjeta(d, x, yMon, w, 92, { c: 14 });
       escribir(d, k, x + 16, yMon + 34, { p: 21, b: 600, c: t.tenue });
-      if (v !== '') escribir(d, v, x + w - 18, yMon + 72, { f: 'grab', p: 40, a: 'right' });
+      // El dinero cambia en cada partida: en papel, lo inicial va pequeño y el recuadro queda libre
+      if (v !== '' && t.plano) escribir(d, 'Al inicio: ' + v, x + w - 16, yMon + 34, { p: 18, c: t.tenue, a: 'right' });
+      else if (v !== '') escribir(d, v, x + w - 18, yMon + 72, { f: 'grab', p: 40, a: 'right' });
     });
 
     const xO = M + wM + 36, wO = W - M - xO;
@@ -453,23 +480,44 @@
       if (pj.notas) parrafo(d, pj.notas, xI, y3 + 130, wI, 40, { p: 28, maxLineas: 14 });
       else renglones(d, xI, y3 + 86, wI, 13, 48);
     }
-    escribir(d, 'Tu Primer Personaje · Reglas del SRD 5.1 (CC BY 4.0) · Iconos de game-icons.net (CC BY 3.0)', W / 2, H - 62, { p: 17, a: 'center', c: t.tenue });
+    pie(d);
+  }
+
+  /* ---------- Página 3: solo en blanco y negro, cuando la magia ocupa el lugar de las notas ---------- */
+  function pagina3(d, pj, c) {
+    const { t } = d;
+    fondo(d); marco(d);
+    blason(d, 190, 176, 92, c);
+    escribir(d, pj.nombre || 'Mis notas', 330, 172, { f: 'disp', p: 86, max: W - M - 330, min: 44 });
+    escribir(d, 'Notas de aventura', 330, 226, { p: 34, b: 600, c: t.tenue });
+    filete(d, 330, W - M, 256);
+    const y1 = 304, hN = H - 92 - y1, lh = 54;
+    tarjeta(d, M, y1, W - 2 * M, hN, { c: 24, lw: 2.5 });
+    if (pj.notas) parrafo(d, pj.notas, M + 26, y1 + 44, W - 2 * M - 52, lh, { p: 30, maxLineas: 30 });
+    else renglones(d, M + 26, y1 + 12, W - 2 * M - 52, Math.floor((hN - 40) / lh), lh);
+    pie(d);
   }
 
   P.hoja = {
+    // Páginas que tiene la hoja: quien no tiene magia ya lleva sus notas en la página 2
+    paginas(pj, tema) {
+      const c = P.calcular(pj);
+      return TEMAS[tema] && TEMAS[tema].plano && (c.magia || !c.clase) ? [1, 2, 3] : [1, 2];
+    },
     // Dibuja una página en un lienzo ya dimensionado; devuelve el registro de textos para la capa del PDF
     dibujar(lienzo, pj, opciones = {}) {
       const c = P.calcular(pj);
       const ctx = lienzo.getContext('2d');
       const tema = opciones.tema || 'noche';
-      const color = c.clase ? c.clase.color : '#C59A4A';
+      const t = TEMAS[tema];
+      const color = t.plano ? '#000000' : c.clase ? c.clase.color : '#C59A4A';
       const oscuro = tema === 'noche';
-      const d = { ctx, t: TEMAS[tema], acento: color, acentoTexto: oscuro ? mezclar(color, '#FFFFFF', 0.12) : mezclar(color, '#000000', 0.42), oscuro, reg: opciones.registro || null, pag: opciones.pagina || 1 };
+      const d = { ctx, t, acento: color, acentoTexto: oscuro ? mezclar(color, '#FFFFFF', 0.12) : mezclar(color, '#000000', 0.42), oscuro, reg: opciones.registro || null, pag: opciones.pagina || 1 };
       const escala = lienzo.width / W;
       ctx.save();
       ctx.setTransform(escala, 0, 0, escala, opciones.dy || 0, 0);
       ctx.imageSmoothingQuality = 'high';
-      if ((opciones.pagina || 1) === 1) pagina1(d, pj, c); else pagina2(d, pj, c);
+      [pagina1, pagina2, pagina3][(opciones.pagina || 1) - 1](d, pj, c);
       ctx.restore();
       return d.reg;
     },

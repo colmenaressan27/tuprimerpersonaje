@@ -155,16 +155,17 @@
           </div>
           <p class="estado" id="estado-asistente" role="status"></p>
         </form>
+        <p class="ayuda" id="propuesta-respuesta" hidden></p>
         <section id="propuesta" class="propuesta" aria-labelledby="t-propuesta" hidden>
           <h3 id="t-propuesta">Esto entendí</h3>
-          <p class="ayuda" id="propuesta-respuesta" hidden></p>
           <ul id="lista-propuesta" class="lista-limpia"></ul>
           <ul id="lista-dudas" class="lista-limpia"></ul>
           <button type="button" class="btn btn-primario" data-accion="confirmar" id="btn-confirmar">Aplicar lo marcado</button>
         </section>
         <section id="recomendaciones" class="propuesta" aria-labelledby="t-recomendaciones" hidden>
           <h3 id="t-recomendaciones">Te recomiendo</h3>
-          <div id="lista-recomendaciones" class="recomendaciones"></div>
+          <p class="ayuda" id="recomendaciones-pregunta" hidden></p>
+          <div id="lista-recomendaciones"></div>
         </section>
         <section id="activos" class="activos" aria-labelledby="t-activos">
           <h3 id="t-activos">Cambios activos</h3>
@@ -278,6 +279,9 @@
 
   <div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3" id="tostadas" aria-live="polite"></div>
 
+  <!-- Páginas en blanco y negro para la impresora: solo existen mientras se imprime -->
+  <div id="zona-impresion"></div>
+
   <script src="vendor/bootstrap.bundle.min.js" defer></script>
   <script src="vendor/three-dados.min.js" defer></script>
   <script src="vendor/jspdf.umd.min.js" defer></script>
@@ -286,6 +290,7 @@
   <script src="js/datos.js" defer></script>
   <script src="js/motor.js" defer></script>
   <script src="js/interprete.js" defer></script>
+  <script src="js/elegir.js" defer></script>
   <script src="js/ia.js" defer></script>
   <script src="js/dados3d.js" defer></script>
   <script src="js/hoja.js" defer></script>

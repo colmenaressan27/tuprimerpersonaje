@@ -25,7 +25,7 @@
     return `<div class="casillas" data-max="${max}">${lista.map((h) => {
       const on = elegidos.includes(h.id);
       const fija = opts.fijas && opts.fijas.includes(h.id);
-      return `<label class="casilla" for="${name}-${h.id}"><input type="checkbox" id="${name}-${h.id}" name="${name}" value="${h.id}"${on || fija ? ' checked' : ''}${(llenas && !on) || fija ? ' disabled' : ''}><span>${esc(h.nombre)}${h.ej ? `<small>${esc(h.ej)}</small>` : ''}${fija ? '<small>Ya la tienes</small>' : ''}</span></label>`;
+      return `<label class="casilla" for="${name}-${h.id}"><input type="checkbox" id="${name}-${h.id}" name="${name}" value="${h.id}"${on || fija ? ' checked' : ''}${(llenas && !on) || fija ? ' disabled' : ''}><span>${esc(h.nombre)}${h.car ? ` <span class="car-hab">(${h.car.toUpperCase()})</span>` : ''}${h.ej ? `<small>${esc(h.ej)}</small>` : ''}${fija ? '<small>Ya la tienes</small>' : ''}</span></label>`;
     }).join('')}</div>`;
   }
 
@@ -101,7 +101,7 @@
 
   /* ---------- Imagina ---------- */
   const vistaImagina = () => `<h1 class="titulo-paso" tabindex="-1">¿Qué personaje imaginas?</h1>
-    <p class="sub">Escríbelo con tus palabras y te muestro qué entendí antes de aplicarlo. Si prefieres elegir tú mismo, pulsa Siguiente.</p>
+    <p class="sub">Escríbelo con tus palabras, aunque solo sea lo que te gusta hacer. Te muestro varias opciones y tú decides. Si prefieres elegir paso a paso, pulsa Siguiente.</p>
     <div id="ancla-asistente"></div>`;
 
   /* ---------- Raza ---------- */
@@ -170,17 +170,22 @@
   const COSTO = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 };
   P.MATRIZ = MATRIZ; P.COSTO = COSTO;
   P.gastoCompra = (base) => Object.values(base).reduce((s, v) => s + (COSTO[v] ?? 0), 0);
+  P.valoresPJ = (pj) => (pj.metodo === 'dados' ? pj.tiradas.map((t) => t.s) : MATRIZ);
 
   function vistaPuntuaciones(E) {
     const { pj } = E, c = P.calcular(pj), m = pj.metodo;
-    const valores = m === 'dados' ? pj.tiradas.map((t) => t.s) : MATRIZ;
+    const valores = P.valoresPJ(pj);
     const fila = (a) => {
       const v = c.caract[a.id];
       let control;
       if (m === 'compra') {
         control = `<div class="contador"><button type="button" class="btn-icono" data-accion="compra" data-car="${a.id}" data-delta="-1" aria-label="Bajar ${a.nombre}"${(pj.base[a.id] ?? 8) <= 8 ? ' disabled' : ''}>−</button><output aria-label="${a.nombre}">${pj.base[a.id] ?? 8}</output><button type="button" class="btn-icono" data-accion="compra" data-car="${a.id}" data-delta="1" aria-label="Subir ${a.nombre}"${(pj.base[a.id] ?? 8) >= 15 ? ' disabled' : ''}>+</button></div>`;
       } else {
-        const ops = ['<option value="">Elegir</option>'].concat([...new Set(valores)].map((n) => `<option value="${n}"${pj.base[a.id] === n ? ' selected' : ''}>${n}</option>`));
+        // Un renglón por tiro, aunque se repita. Si otra característica ya lo usa, elegirlo las intercambia.
+        const ops = ['<option value="">Elegir</option>'].concat(P.opcionesPuntuacion(valores, pj.base, a.id).map((o) => {
+          const otra = o.de && o.de !== a.id;
+          return `<option value="${o.valor}"${o.de === a.id ? ' selected' : ''}${otra ? ` data-de="${o.de}"` : ''}>${o.valor}${otra ? ' · en ' + o.de.toUpperCase() : ''}</option>`;
+        }));
         control = `<select class="form-select" id="base-${a.id}" data-car="${a.id}" aria-label="Puntuación de ${a.nombre}"${m === 'dados' && pj.tiradas.length < 6 ? ' disabled' : ''}>${ops.join('')}</select>`;
       }
       return `<div class="fila-car">
@@ -195,7 +200,7 @@
     if (m === 'matriz') cuerpo = '<p>Tienes seis números: <strong>15, 14, 13, 12, 10 y 8</strong>. Pon el más alto en lo más importante de tu clase.</p>';
     if (m === 'dados') {
       const hechas = pj.tiradas.length;
-      cuerpo = `<p>Lanzas cuatro d6, quitas el más bajo y sumas los otros tres. Lo haces seis veces.</p>
+      cuerpo = `<p>Lanzas cuatro d6, quitas el más bajo y sumas los otros tres. Lo haces seis veces.${hechas >= 6 ? ' Coloca cada tiro en una característica. Si un número salió varias veces, puedes usarlo esas mismas veces.' : ''}</p>
       <div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-primario" data-accion="tirar-4d6"${hechas >= 6 ? ' disabled' : ''}>${hechas >= 6 ? 'Ya tienes tus seis tiradas' : 'Lanzar 4d6 (' + (hechas + 1) + ' de 6)'}</button>${hechas ? '<button type="button" class="btn btn-secundario" data-accion="reiniciar-tiradas">Volver a empezar</button>' : ''}</div>
       <div class="tiradas-lista">${pj.tiradas.map((t) => { const min = t.d.indexOf(Math.min(...t.d)); return `<div class="tirada">${t.d.map((x, i) => (i === min ? `<s>${x}</s>` : `<span>${x}</span>`)).join(' ')}<b>${t.s}</b></div>`; }).join('')}</div>`;
     }
@@ -209,7 +214,7 @@
       <div class="segmento" role="radiogroup" aria-label="Método">
         ${[['matriz', 'Números fijos'], ['dados', 'Lanzar dados'], ['compra', 'Comprar puntos']].map(([k, t]) => `<input type="radio" class="btn-check" name="metodo" id="metodo-${k}" value="${k}"${m === k ? ' checked' : ''}><label for="metodo-${k}">${t}</label>`).join('')}
       </div>
-      ${m !== 'dados' && c.clase ? '<button type="button" class="btn btn-secundario" data-accion="auto-reparto">Repartir por mí</button>' : ''}
+      ${valores.length === 6 && c.clase ? '<button type="button" class="btn btn-secundario" data-accion="auto-reparto">Repartir por mí</button>' : ''}
     </div>
     <div class="mt-3">${cuerpo}</div>
     <div class="cabeza-car" aria-hidden="true"><span></span><span>Característica</span><span>Puntuación</span><span>Raza</span><span>Mod.</span></div>
@@ -218,6 +223,7 @@
   const guiaPuntuaciones = (E) => {
     const c = P.calcular(E.pj);
     if (c.hayPuntuaciones) return 'Listo. Fíjate en la columna Mod.: ese es el número que sumarás a tus dados.';
+    if (E.pj.metodo === 'dados' && E.pj.tiradas.length < 6) return 'Lanza tus seis tiradas. Después las colocas tú o pulsas «Repartir por mí».';
     return c.clase ? `Para ${c.clase.nombre}, lo más importante es ${c.clase.clave}. Lo más fácil es pulsar «Repartir por mí» y luego ajustar lo que quieras.` : 'Reparte un número por característica. Un 10 es lo normal en una persona común.';
   };
 
@@ -226,7 +232,7 @@
     const { pj } = E, c = P.calcular(pj), t = c.trasfondo;
     let det = '';
     if (t) {
-      const nombreH = (id) => P.buscar(P.HABILIDADES, id).nombre;
+      const nombreH = P.nombreHab;
       const repetidas = c.repetidas;
       const tienen = new Set(c.habilidades.filter((h) => h.comp).map((h) => h.id));
       det = `<section class="detalle" id="detalle" aria-labelledby="t-det">
@@ -304,7 +310,7 @@
 
   P.PASOS = [
     { id: 'aprende', corto: 'Dados', vista: vistaAprende, guia: guiaAprende },
-    { id: 'imagina', corto: 'Imagina', vista: vistaImagina, guia: () => 'Cuéntame qué personaje imaginas. Puede ser algo como «un enano fuerte que proteja al grupo». Te muestro lo que entendí y tú decides.' },
+    { id: 'imagina', corto: 'Imagina', vista: vistaImagina, guia: () => 'Cuéntame qué personaje imaginas. Puede ser tan simple como «me gusta curar». Te muestro varios caminos y tú decides.' },
     { id: 'raza', corto: 'Raza', vista: vistaRaza, guia: guiaRaza },
     { id: 'clase', corto: 'Clase', vista: vistaClase, guia: guiaClase },
     { id: 'puntuaciones', corto: 'Puntos', vista: vistaPuntuaciones, guia: guiaPuntuaciones },

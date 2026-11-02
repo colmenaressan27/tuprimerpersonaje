@@ -217,6 +217,7 @@ html[data-movimiento="reducido"] .narrador-sello { animation: none; }
 .casilla:has(input:disabled) { opacity: .5; cursor: not-allowed; }
 .casilla:has(input:focus-visible) { outline: 3px solid var(--foco); outline-offset: 2px; }
 .casilla small { display: block; font-weight: 450; color: var(--texto-2); line-height: 1.25; }
+.car-hab { font-weight: 500; font-size: .84em; color: var(--texto-2); }
 
 /* Puntuaciones */
 .segmento { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 999px; background: var(--sup-2); border: 1px solid var(--borde); }
@@ -348,6 +349,9 @@ html[data-movimiento="reducido"] .narrador-sello { animation: none; }
 .recomendacion div { flex: 1; min-width: 0; }
 .recomendacion strong { display: block; }
 .recomendacion p { margin: 0; font-size: .92rem; color: var(--texto-2); }
+.recomendacion.elegida { box-shadow: inset 0 0 0 1.5px var(--acento-texto); }
+.grupo-rec { font-size: 1rem; margin: .9rem 0 .4rem; color: var(--texto-2); }
+.grupo-rec:first-child { margin-top: 0; }
 .activo { display: flex; gap: .5rem; align-items: center; justify-content: space-between; padding: .5rem .75rem; border-radius: var(--radio-s); background: var(--sup-2); }
 .duda { color: var(--sangre); font-weight: 600; }
 
@@ -412,4 +416,15 @@ html[data-movimiento="reducido"] .narrador-sello { animation: none; }
 @media (forced-colors: active) {
   .opcion:has(input:checked), .chip[aria-pressed="true"] { outline: 3px solid Highlight; }
   .riel-barra span { background: Highlight; }
+}
+
+/* Impresión: solo salen las páginas de la hoja, a sangre sobre papel carta */
+#zona-impresion { display: none; }
+@media print {
+  @page { size: letter portrait; margin: 0; }
+  html, body { background: #FFFFFF !important; }
+  body > :not(#zona-impresion) { display: none !important; }
+  #zona-impresion { display: block; }
+  #zona-impresion img { display: block; width: 100%; height: auto; break-after: page; }
+  #zona-impresion img:last-child { break-after: auto; }
 }

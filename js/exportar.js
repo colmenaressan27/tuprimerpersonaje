@@ -78,16 +78,15 @@
 
   const aBlob = (cv, tipo, calidad) => new Promise((ok, mal) => cv.toBlob((b) => (b ? ok(b) : mal(new Error('No se pudo crear la imagen.'))), tipo, calidad));
 
-  // Las dos páginas, una debajo de la otra: cómodo de leer en el celular
+  // Las páginas, una debajo de la otra: cómodo de leer en el celular
   P.crearJPEG = async function (pj, tema) {
     await P.hoja.listas();
-    const a = P.hoja.lienzo(pj, { tema, pagina: 1, escala: 1 });
-    const b = P.hoja.lienzo(pj, { tema, pagina: 2, escala: 1 });
+    const paginas = P.hoja.paginas(pj, tema).map((pagina) => P.hoja.lienzo(pj, { tema, pagina, escala: 1 }));
     const hueco = 24, cv = document.createElement('canvas');
-    cv.width = a.width; cv.height = a.height + b.height + hueco;
+    cv.width = paginas[0].width; cv.height = paginas.reduce((s, p) => s + p.height + hueco, -hueco);
     const x = cv.getContext('2d');
-    x.fillStyle = tema === 'noche' ? '#0C0814' : '#EADDC0'; x.fillRect(0, 0, cv.width, cv.height);
-    x.drawImage(a, 0, 0); x.drawImage(b, 0, a.height + hueco);
+    x.fillStyle = { noche: '#0C0814', pergamino: '#EADDC0', byn: '#FFFFFF' }[tema]; x.fillRect(0, 0, cv.width, cv.height);
+    paginas.forEach((p, i) => x.drawImage(p, 0, i * (p.height + hueco)));
     return aBlob(cv, 'image/jpeg', 0.9);
   };
 
@@ -98,11 +97,12 @@
     const ancho = doc.internal.pageSize.getWidth(), alto = doc.internal.pageSize.getHeight();
     const k = ancho / P.HOJA_W;
     doc.setProperties({ title: pj.nombre ? 'Hoja de ' + pj.nombre : 'Hoja de personaje', subject: 'Hoja de personaje de D&D 5.ª edición', creator: 'Tu Primer Personaje', keywords: 'D&D, personaje' });
-    for (const pagina of [1, 2]) {
-      if (pagina === 2) doc.addPage();
+    for (const pagina of P.hoja.paginas(pj, tema)) {
+      if (pagina > 1) doc.addPage();
       const registro = [];
       const cv = P.hoja.lienzo(pj, { tema, pagina, escala: 1.5, registro });
-      doc.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, ancho, alto, undefined, 'FAST');
+      // El negro sobre blanco muestra los halos del JPEG, así que el blanco y negro va a más calidad
+      doc.addImage(cv.toDataURL('image/jpeg', tema === 'byn' ? 0.98 : 0.92), 'JPEG', 0, 0, ancho, alto, undefined, 'FAST');
       // Capa de texto invisible: el PDF se puede buscar, copiar y leer con un lector de pantalla
       doc.setFont('helvetica', 'normal');
       registro.forEach((r) => {
