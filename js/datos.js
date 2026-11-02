@@ -36,54 +36,54 @@ window.PJ = window.PJ || {};
 
   P.nombreHab = (id) => { const h = P.HABILIDADES.find((x) => x.id === id); return h.nombre + ' (' + h.car.toUpperCase() + ')'; };
 
-  const VISION = { n: 'Visión en la oscuridad', d: 'Distingues formas sin luz hasta 18 m, sin colores.' };
+  const VISION = { n: 'Visión en la oscuridad', d: 'Distingues formas sin luz hasta 60 ft, sin colores.' };
   const FEERICO = { n: 'Linaje feérico', d: 'Ventaja contra encantamientos. La magia no puede dormirte.' };
 
   P.RAZAS = [
-    { id: 'humano', nombre: 'Humano', en: 'human', icono: 'humano', frase: 'Adaptable y ambicioso. Bueno en un poco de todo.', bonos: { fue: 1, des: 1, con: 1, int: 1, sab: 1, car: 1 }, velocidad: 9, idiomas: ['Común', 'Uno a elegir'], rasgos: [{ n: 'Versátil', d: 'Es la raza más sencilla de manejar: +1 a las seis características.' }], buenas: 'Cualquier clase' },
-    { id: 'elfo', nombre: 'Elfo', en: 'elf', icono: 'elfo', frase: 'Ágil, longevo y muy unido a la magia y a los bosques.', bonos: { des: 2 }, velocidad: 9, idiomas: ['Común', 'Élfico'], habilidades: ['percepcion'], rasgos: [VISION, FEERICO, { n: 'Sentidos agudos', d: 'Competencia en Percepción.' }, { n: 'Trance', d: 'Meditas 4 horas en lugar de dormir 8.' }], buenas: 'Explorador, Pícaro, Mago, Monje',
+    { id: 'humano', nombre: 'Humano', en: 'human', icono: 'humano', frase: 'Adaptable y ambicioso. Bueno en un poco de todo.', bonos: { fue: 1, des: 1, con: 1, int: 1, sab: 1, car: 1 }, velocidad: 30, idiomas: ['Común', 'Uno a elegir'], rasgos: [{ n: 'Versátil', d: 'Es la raza más sencilla de manejar: +1 a las seis características.' }], buenas: 'Cualquier clase' },
+    { id: 'elfo', nombre: 'Elfo', en: 'elf', icono: 'elfo', frase: 'Ágil, longevo y muy unido a la magia y a los bosques.', bonos: { des: 2 }, velocidad: 30, idiomas: ['Común', 'Élfico'], habilidades: ['percepcion'], rasgos: [VISION, FEERICO, { n: 'Sentidos agudos', d: 'Competencia en Percepción.' }, { n: 'Trance', d: 'Meditas 4 horas en lugar de dormir 8.' }], buenas: 'Explorador, Pícaro, Mago, Monje',
       subrazas: [
         { id: 'alto', nombre: 'Alto elfo', bonos: { int: 1 }, frase: '+1 INT y un truco de mago.', rasgos: [{ n: 'Truco de alto elfo', d: 'Conoces un truco de mago.' }] },
-        { id: 'bosque', nombre: 'Elfo del bosque', bonos: { sab: 1 }, velocidad: 10.5, frase: '+1 SAB y caminas más rápido.', rasgos: [{ n: 'Pies ligeros', d: 'Tu velocidad es 10,5 m.' }, { n: 'Máscara de la naturaleza', d: 'Te escondes entre follaje, lluvia o niebla.' }] },
-        { id: 'oscuro', nombre: 'Elfo oscuro (drow)', bonos: { car: 1 }, frase: '+1 CAR y gran visión, pero sufres con el sol.', rasgos: [{ n: 'Visión superior', d: 'Ves en la oscuridad hasta 36 m.' }, { n: 'Sensibilidad a la luz', d: 'Desventaja al atacar y percibir bajo el sol.' }] },
+        { id: 'bosque', nombre: 'Elfo del bosque', bonos: { sab: 1 }, velocidad: 35, frase: '+1 SAB y caminas más rápido.', rasgos: [{ n: 'Pies ligeros', d: 'Tu velocidad es 35 ft.' }, { n: 'Máscara de la naturaleza', d: 'Te escondes entre follaje, lluvia o niebla.' }] },
+        { id: 'oscuro', nombre: 'Elfo oscuro (drow)', bonos: { car: 1 }, frase: '+1 CAR y gran visión, pero sufres con el sol.', rasgos: [{ n: 'Visión superior', d: 'Ves en la oscuridad hasta 120 ft.' }, { n: 'Sensibilidad a la luz', d: 'Desventaja al atacar y percibir bajo el sol.' }] },
       ] },
-    { id: 'enano', nombre: 'Enano', en: 'dwarf', icono: 'enano', frase: 'Bajo, fuerte y muy terco. Cuesta mucho derribarlo.', bonos: { con: 2 }, velocidad: 7.5, sinFrenoArmadura: true, idiomas: ['Común', 'Enano'], rasgos: [VISION, { n: 'Resistencia enana', d: 'Ventaja para salvarte del veneno y mitad de su daño.' }, { n: 'Entrenamiento enano', d: 'Competencia con hachas y martillos.' }], buenas: 'Guerrero, Clérigo, Paladín, Bárbaro',
+    { id: 'enano', nombre: 'Enano', en: 'dwarf', icono: 'enano', frase: 'Bajo, fuerte y muy terco. Cuesta mucho derribarlo.', bonos: { con: 2 }, velocidad: 25, sinFrenoArmadura: true, idiomas: ['Común', 'Enano'], rasgos: [VISION, { n: 'Resistencia enana', d: 'Ventaja para salvarte del veneno y mitad de su daño.' }, { n: 'Entrenamiento enano', d: 'Competencia con hachas y martillos.' }], buenas: 'Guerrero, Clérigo, Paladín, Bárbaro',
       subrazas: [
         { id: 'colinas', nombre: 'Enano de las colinas', bonos: { sab: 1 }, pgPorNivel: 1, frase: '+1 SAB y +1 de vida por nivel.', rasgos: [{ n: 'Dureza enana', d: '+1 punto de golpe por nivel.' }] },
         { id: 'montanas', nombre: 'Enano de las montañas', bonos: { fue: 2 }, frase: '+2 FUE y entrenamiento con armadura.', rasgos: [{ n: 'Armadura enana', d: 'Competencia con armadura ligera y media.' }] },
       ] },
-    { id: 'mediano', nombre: 'Mediano', en: 'halfling', icono: 'mediano', frase: 'Pequeño, alegre y con una suerte increíble.', bonos: { des: 2 }, velocidad: 7.5, tamano: 'Pequeño', idiomas: ['Común', 'Mediano'], rasgos: [{ n: 'Suertudo', d: 'Si sacas 1 en el d20, vuelves a tirar.' }, { n: 'Valiente', d: 'Ventaja contra el miedo.' }, { n: 'Agilidad', d: 'Pasas por el espacio de criaturas más grandes.' }], buenas: 'Pícaro, Bardo, Monje',
+    { id: 'mediano', nombre: 'Mediano', en: 'halfling', icono: 'mediano', frase: 'Pequeño, alegre y con una suerte increíble.', bonos: { des: 2 }, velocidad: 25, tamano: 'Pequeño', idiomas: ['Común', 'Mediano'], rasgos: [{ n: 'Suertudo', d: 'Si sacas 1 en el d20, vuelves a tirar.' }, { n: 'Valiente', d: 'Ventaja contra el miedo.' }, { n: 'Agilidad', d: 'Pasas por el espacio de criaturas más grandes.' }], buenas: 'Pícaro, Bardo, Monje',
       subrazas: [
         { id: 'piesligeros', nombre: 'Mediano piesligeros', bonos: { car: 1 }, frase: '+1 CAR y te escondes detrás de otros.', rasgos: [{ n: 'Sigilo natural', d: 'Te escondes detrás de criaturas más grandes.' }] },
         { id: 'fornido', nombre: 'Mediano fornido', bonos: { con: 1 }, frase: '+1 CON y resistes el veneno.', rasgos: [{ n: 'Resistencia fornida', d: 'Ventaja contra veneno y mitad de su daño.' }] },
       ] },
-    { id: 'draconido', nombre: 'Dracónido', en: 'dragonborn', icono: 'draconido', frase: 'Descendiente de dragones, orgulloso y con aliento elemental.', bonos: { fue: 2, car: 1 }, velocidad: 9, idiomas: ['Común', 'Dracónico'], rasgos: [{ n: 'Aliento de dragón', d: '2d6 de daño en un área. Se recarga con un descanso.' }, { n: 'Resistencia dracónica', d: 'Recibes la mitad del daño de tu elemento.' }], buenas: 'Paladín, Guerrero, Hechicero, Bárbaro' },
-    { id: 'gnomo', nombre: 'Gnomo', en: 'gnome', icono: 'gnomo', frase: 'Curioso, inventor y lleno de energía.', bonos: { int: 2 }, velocidad: 7.5, tamano: 'Pequeño', idiomas: ['Común', 'Gnomo'], rasgos: [VISION, { n: 'Astucia gnoma', d: 'Ventaja en salvaciones de INT, SAB y CAR contra magia.' }], buenas: 'Mago, Pícaro, Bardo',
+    { id: 'draconido', nombre: 'Dracónido', en: 'dragonborn', icono: 'draconido', frase: 'Descendiente de dragones, orgulloso y con aliento elemental.', bonos: { fue: 2, car: 1 }, velocidad: 30, idiomas: ['Común', 'Dracónico'], rasgos: [{ n: 'Aliento de dragón', d: '2d6 de daño en un área. Se recarga con un descanso.' }, { n: 'Resistencia dracónica', d: 'Recibes la mitad del daño de tu elemento.' }], buenas: 'Paladín, Guerrero, Hechicero, Bárbaro' },
+    { id: 'gnomo', nombre: 'Gnomo', en: 'gnome', icono: 'gnomo', frase: 'Curioso, inventor y lleno de energía.', bonos: { int: 2 }, velocidad: 25, tamano: 'Pequeño', idiomas: ['Común', 'Gnomo'], rasgos: [VISION, { n: 'Astucia gnoma', d: 'Ventaja en salvaciones de INT, SAB y CAR contra magia.' }], buenas: 'Mago, Pícaro, Bardo',
       subrazas: [
         { id: 'rocas', nombre: 'Gnomo de las rocas', bonos: { con: 1 }, frase: '+1 CON y fabricas pequeños aparatos.', rasgos: [{ n: 'Manitas', d: 'Fabricas pequeños aparatos mecánicos.' }] },
         { id: 'bosque', nombre: 'Gnomo del bosque', bonos: { des: 1 }, frase: '+1 DES e ilusiones menores.', rasgos: [{ n: 'Ilusionista nato', d: 'Conoces el truco Ilusión menor.' }, { n: 'Amigo de los animales', d: 'Hablas con animales pequeños.' }] },
       ] },
-    { id: 'semielfo', nombre: 'Semielfo', en: 'half-elf', icono: 'semielfo', frase: 'Mitad humano, mitad elfo. Encantador y versátil.', bonos: { car: 2 }, eligeCar: 2, velocidad: 9, idiomas: ['Común', 'Élfico', 'Uno a elegir'], eligeHabilidades: 2, rasgos: [VISION, FEERICO, { n: 'Versatilidad', d: 'Competencia en 2 habilidades que elijas.' }], buenas: 'Bardo, Brujo, Paladín, Hechicero' },
-    { id: 'semiorco', nombre: 'Semiorco', en: 'half-orc', icono: 'semiorco', frase: 'Mitad humano, mitad orco. Fuerte y muy difícil de tumbar.', bonos: { fue: 2, con: 1 }, velocidad: 9, idiomas: ['Común', 'Orco'], habilidades: ['intimidacion'], rasgos: [VISION, { n: 'Aguante incansable', d: 'Una vez por descanso largo, si caes a 0 PG, te quedas en 1.' }, { n: 'Ataques salvajes', d: 'Tus críticos cuerpo a cuerpo tiran un dado extra.' }], buenas: 'Bárbaro, Guerrero, Paladín' },
-    { id: 'tiflin', nombre: 'Tiflin', en: 'tiefling', icono: 'tiflin', frase: 'Con sangre infernal: cuernos, cola y mucha presencia.', bonos: { car: 2, int: 1 }, velocidad: 9, idiomas: ['Común', 'Infernal'], rasgos: [VISION, { n: 'Resistencia infernal', d: 'Recibes la mitad del daño de fuego.' }, { n: 'Legado infernal', d: 'Sabes el truco Taumaturgia. Ganas más magia en niveles 3 y 5.' }], buenas: 'Brujo, Bardo, Hechicero, Paladín' },
+    { id: 'semielfo', nombre: 'Semielfo', en: 'half-elf', icono: 'semielfo', frase: 'Mitad humano, mitad elfo. Encantador y versátil.', bonos: { car: 2 }, eligeCar: 2, velocidad: 30, idiomas: ['Común', 'Élfico', 'Uno a elegir'], eligeHabilidades: 2, rasgos: [VISION, FEERICO, { n: 'Versatilidad', d: 'Competencia en 2 habilidades que elijas.' }], buenas: 'Bardo, Brujo, Paladín, Hechicero' },
+    { id: 'semiorco', nombre: 'Semiorco', en: 'half-orc', icono: 'semiorco', frase: 'Mitad humano, mitad orco. Fuerte y muy difícil de tumbar.', bonos: { fue: 2, con: 1 }, velocidad: 30, idiomas: ['Común', 'Orco'], habilidades: ['intimidacion'], rasgos: [VISION, { n: 'Aguante incansable', d: 'Una vez por descanso largo, si caes a 0 PG, te quedas en 1.' }, { n: 'Ataques salvajes', d: 'Tus críticos cuerpo a cuerpo tiran un dado extra.' }], buenas: 'Bárbaro, Guerrero, Paladín' },
+    { id: 'tiflin', nombre: 'Tiflin', en: 'tiefling', icono: 'tiflin', frase: 'Con sangre infernal: cuernos, cola y mucha presencia.', bonos: { car: 2, int: 1 }, velocidad: 30, idiomas: ['Común', 'Infernal'], rasgos: [VISION, { n: 'Resistencia infernal', d: 'Recibes la mitad del daño de fuego.' }, { n: 'Legado infernal', d: 'Sabes el truco Taumaturgia. Ganas más magia en niveles 3 y 5.' }], buenas: 'Brujo, Bardo, Hechicero, Paladín' },
   ];
 
   /* cat: s = sencilla, m = marcial. La cerbatana y la red quedan fuera: no tienen un dado de daño que tirar. */
   P.ARMAS = {
     baston: { nombre: 'Bastón', cat: 's', dado: '1d6', tipo: 'contundente', nota: '1d8 a dos manos' },
-    daga: { nombre: 'Daga', cat: 's', dado: '1d4', tipo: 'perforante', sutil: true, lanzar: '6/18 m' },
+    daga: { nombre: 'Daga', cat: 's', dado: '1d4', tipo: 'perforante', sutil: true, lanzar: '20/60 ft' },
     garrote: { nombre: 'Garrote', cat: 's', dado: '1d4', tipo: 'contundente' },
     'garrote-grande': { nombre: 'Garrote grande', cat: 's', dado: '1d8', tipo: 'contundente', dosManos: true },
-    'hacha-mano': { nombre: 'Hacha de mano', cat: 's', dado: '1d6', tipo: 'cortante', lanzar: '6/18 m' },
+    'hacha-mano': { nombre: 'Hacha de mano', cat: 's', dado: '1d6', tipo: 'cortante', lanzar: '20/60 ft' },
     hoz: { nombre: 'Hoz', cat: 's', dado: '1d4', tipo: 'cortante' },
-    jabalina: { nombre: 'Jabalina', cat: 's', dado: '1d6', tipo: 'perforante', lanzar: '9/36 m' },
-    lanza: { nombre: 'Lanza', cat: 's', dado: '1d6', tipo: 'perforante', lanzar: '6/18 m', nota: '1d8 a dos manos' },
-    'martillo-ligero': { nombre: 'Martillo ligero', cat: 's', dado: '1d4', tipo: 'contundente', lanzar: '6/18 m' },
+    jabalina: { nombre: 'Jabalina', cat: 's', dado: '1d6', tipo: 'perforante', lanzar: '30/120 ft' },
+    lanza: { nombre: 'Lanza', cat: 's', dado: '1d6', tipo: 'perforante', lanzar: '20/60 ft', nota: '1d8 a dos manos' },
+    'martillo-ligero': { nombre: 'Martillo ligero', cat: 's', dado: '1d4', tipo: 'contundente', lanzar: '20/60 ft' },
     maza: { nombre: 'Maza', cat: 's', dado: '1d6', tipo: 'contundente' },
-    'arco-corto': { nombre: 'Arco corto', cat: 's', dado: '1d6', tipo: 'perforante', distancia: '24/96 m', dosManos: true },
-    'ballesta-ligera': { nombre: 'Ballesta ligera', cat: 's', dado: '1d8', tipo: 'perforante', distancia: '24/96 m', dosManos: true },
-    dardo: { nombre: 'Dardo', cat: 's', dado: '1d4', tipo: 'perforante', sutil: true, lanzar: '6/18 m' },
-    honda: { nombre: 'Honda', cat: 's', dado: '1d4', tipo: 'contundente', distancia: '9/36 m' },
+    'arco-corto': { nombre: 'Arco corto', cat: 's', dado: '1d6', tipo: 'perforante', distancia: '80/320 ft', dosManos: true },
+    'ballesta-ligera': { nombre: 'Ballesta ligera', cat: 's', dado: '1d8', tipo: 'perforante', distancia: '80/320 ft', dosManos: true },
+    dardo: { nombre: 'Dardo', cat: 's', dado: '1d4', tipo: 'perforante', sutil: true, lanzar: '20/60 ft' },
+    honda: { nombre: 'Honda', cat: 's', dado: '1d4', tipo: 'contundente', distancia: '30/120 ft' },
     alabarda: { nombre: 'Alabarda', cat: 'm', dado: '1d10', tipo: 'cortante', dosManos: true },
     cimitarra: { nombre: 'Cimitarra', cat: 'm', dado: '1d6', tipo: 'cortante', sutil: true },
     'espada-corta': { nombre: 'Espada corta', cat: 'm', dado: '1d6', tipo: 'perforante', sutil: true },
@@ -101,10 +101,10 @@ window.PJ = window.PJ || {};
     'maza-grande': { nombre: 'Maza a dos manos', cat: 'm', dado: '2d6', tipo: 'contundente', dosManos: true },
     pica: { nombre: 'Pica', cat: 'm', dado: '1d10', tipo: 'perforante', dosManos: true },
     'pico-guerra': { nombre: 'Pico de guerra', cat: 'm', dado: '1d8', tipo: 'perforante' },
-    tridente: { nombre: 'Tridente', cat: 'm', dado: '1d6', tipo: 'perforante', lanzar: '6/18 m', nota: '1d8 a dos manos' },
-    'arco-largo': { nombre: 'Arco largo', cat: 'm', dado: '1d8', tipo: 'perforante', distancia: '45/180 m', dosManos: true },
-    'ballesta-mano': { nombre: 'Ballesta de mano', cat: 'm', dado: '1d6', tipo: 'perforante', distancia: '9/36 m' },
-    'ballesta-pesada': { nombre: 'Ballesta pesada', cat: 'm', dado: '1d10', tipo: 'perforante', distancia: '30/120 m', dosManos: true },
+    tridente: { nombre: 'Tridente', cat: 'm', dado: '1d6', tipo: 'perforante', lanzar: '20/60 ft', nota: '1d8 a dos manos' },
+    'arco-largo': { nombre: 'Arco largo', cat: 'm', dado: '1d8', tipo: 'perforante', distancia: '150/600 ft', dosManos: true },
+    'ballesta-mano': { nombre: 'Ballesta de mano', cat: 'm', dado: '1d6', tipo: 'perforante', distancia: '30/120 ft' },
+    'ballesta-pesada': { nombre: 'Ballesta pesada', cat: 'm', dado: '1d10', tipo: 'perforante', distancia: '100/400 ft', dosManos: true },
   };
 
   P.armasDe = (lista) => Object.entries(P.ARMAS).map(([id, a]) => Object.assign({ id }, a)).filter((a) => ({

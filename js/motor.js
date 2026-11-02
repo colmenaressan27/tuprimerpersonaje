@@ -164,8 +164,8 @@
     // Velocidad
     let velocidad = raza ? ((subraza && subraza.velocidad) || raza.velocidad) : null;
     if (armadura && armadura.fue && caract.fue.total !== null && caract.fue.total < armadura.fue && !(raza && raza.sinFrenoArmadura)) {
-      velocidad -= 3;
-      avisos.push(armadura.nombre + ' necesita FUE ' + armadura.fue + ': caminas 3 m menos.');
+      velocidad -= 10;
+      avisos.push(armadura.nombre + ' necesita FUE ' + armadura.fue + ': caminas 10 ft menos.');
     }
 
     // Ataques

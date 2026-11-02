@@ -259,7 +259,7 @@ prueba('Brenna: números de la guía', () => {
   const h = (id) => c.habilidades.find((x) => x.id === id).bono;
   assert.equal(h('atletismo'), 5); assert.equal(h('percepcion'), 3); assert.equal(h('perspicacia'), 3); assert.equal(h('intimidacion'), 2); assert.equal(h('sigilo'), 1);
   assert.equal(c.percepcionPasiva, 13); assert.equal(c.pgMax, 13); assert.equal(c.ca.valor, 19);
-  assert.equal(c.iniciativa, 1); assert.equal(c.velocidad, 7.5); assert.equal(c.dadosGolpe, '1d10');
+  assert.equal(c.iniciativa, 1); assert.equal(c.velocidad, 25); assert.equal(c.dadosGolpe, '1d10');
   assert.equal(c.ataques[0].nombre, 'Espada larga'); assert.equal(c.ataques[0].acierta, 5); assert.equal(c.ataques[0].bonoDano, 3);
   assert.equal(c.oro, 10); assert.equal(c.magia, null);
 });
@@ -339,7 +339,16 @@ prueba('habilidades repetidas y pendientes', () => {
 prueba('armadura pesada sin fuerza frena, salvo a enanos', () => {
   const pj = P.brenna(); pj.razaId = 'humano'; pj.subrazaId = null; pj.base.fue = 10;
   const c = P.calcular(pj);
-  assert.equal(c.velocidad, 6); assert.equal(c.avisos.length, 1);
+  assert.equal(c.velocidad, 20); assert.equal(c.avisos.length, 1);
+});
+
+prueba('todas las medidas van en pies', () => {
+  P.RAZAS.forEach((r) => [r].concat(r.subrazas || []).forEach((x) => assert.ok(!x.velocidad || x.velocidad % 5 === 0, x.id)));
+  assert.equal(P.ARMAS['arco-largo'].distancia, '150/600 ft');
+  const textos = JSON.stringify([P.ARMAS, P.RAZAS, P.SRD_CONJUROS, P.SRD_CRIATURAS, P.SRD_OBJETOS, P.SRD_TRAMPAS, P.SRD_ESTADOS]);
+  const metrico = textos.match(/.{30}(\d\s?(?:m|cm|km)(?![a-záéíóúñ])|(?<![a-záéíóúñ])metros?\b).{10}/g);
+  assert.equal(metrico, null, String(metrico));
+  assert.equal(P.SRD_CRIATURAS.find((c) => c.n === 'Goblin').v, '30 ft');
 });
 
 prueba('paquete del QR: ida y vuelta', () => {
@@ -363,7 +372,7 @@ prueba('datos del SRD: conjuros completos y sin restos del PDF', () => {
   });
   assert.ok(P.SRD_CONJUROS.proyectil.texto[0].startsWith('Creas tres dardos brillantes de fuerza mágica'));
   assert.ok(P.SRD_CONJUROS.proyectil.texto[1].startsWith('A niveles superiores.'));
-  assert.ok(P.SRD_CONJUROS.prestidigitacion.texto.some((p) => p.includes('0,03 m³')), 'conserva los superíndices');
+  assert.ok(P.SRD_CONJUROS.prestidigitacion.texto.some((p) => p.includes('1 ft³')), 'conserva los superíndices');
 });
 
 prueba('datos del SRD: criaturas, objetos, trampas y estados', () => {

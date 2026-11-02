@@ -188,7 +188,7 @@
       <div class="vivo-stats">
         <div class="gema"><small>Defensa</small><b>${c.ca.valor ?? '–'}</b></div>
         <div class="gema"><small>Vida</small><b>${c.pgMax ?? '–'}</b></div>
-        <div class="gema"><small>Veloc.</small><b>${c.velocidad ? String(c.velocidad).replace('.', ',') : '–'}</b></div>
+        <div class="gema"><small>Veloc.</small><b>${c.velocidad || '–'}</b><span>${c.velocidad ? 'ft' : ''}</span></div>
       </div>`;
   }
   function pintarVivo() {

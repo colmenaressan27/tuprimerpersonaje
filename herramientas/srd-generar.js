@@ -269,6 +269,37 @@ function estados() {
   return res;
 }
 
+/* ---------- Medidas: del sistema métrico del PDF a pies ---------- */
+// 3 m son 10 ft, 2,5 cm son 1 pulgada y 1,5 km son 1 milla, las equivalencias que usa el propio SRD
+const NUM = '\\d+(?:,\\d+)?';
+const valor = (n) => parseFloat(n.replace(',', '.'));
+const redondo = (n) => String(Math.round(n * 10) / 10).replace('.', ',');
+const VOLUMEN = { '0,03': 1, '0,06': 2, '0,2': 8, '2': 64, '280': 10000 };
+const FRASES = [
+  ['Se tarda 10 m² inutos', 'Se tarda 10 minutos'],
+  ['De 4 m a 6 m', 'De 11 ft a 20 ft'], ['De 7 m a 9 m', 'De 21 ft a 30 ft'],
+  ['un número de metros máximo igual a 1,5 ×', 'un número de pies máximo igual a 5 ×'],
+  ['una cantidad de metros adicionales igual a 3 ×', 'una cantidad de pies adicionales igual a 10 ×'],
+  ['número adicional de metros', 'número adicional de pies'], ['expresado en metros', 'expresado en pies'],
+];
+function pulgadas(cm) {
+  const p = Math.max(1, Math.round(valor(cm) / 2.5));
+  return p % 12 === 0 ? (p / 12) + ' ft' : p === 1 ? '1 pulgada' : p + ' pulgadas';
+}
+// Convierte un número ya sin unidad: «3» de «de 3 a 6 m» usa la unidad del último
+const serie = (re, numero, unidad) => (t) => t.replace(re, (todo) => todo.replace(new RegExp(NUM, 'g'), numero).replace(/\s*(?:metros?|m|km\/h|km|cm)$/, unidad));
+const aPies = (t) => [
+  (x) => FRASES.reduce((s, [a, b]) => s.split(a).join(b), x),
+  (x) => x.replace(new RegExp(`(${NUM})\\s?m³`, 'g'), (_, n) => VOLUMEN[n] + ' ft³'),
+  (x) => x.replace(new RegExp(`(${NUM})\\s?m²`, 'g'), (_, n) => Math.round(valor(n) / 0.1) + ' ft²'),
+  serie(new RegExp(`(?:${NUM}(?: a | o | y |/))*${NUM}\\s?km/h`, 'g'), (n) => redondo(valor(n) / 1.5), ' mi/h'),
+  (x) => x.replace(new RegExp(`(${NUM})\\s?km(?![a-záéíóúñ/])`, 'g'), (_, n) => { const m = valor(n) / 1.5; return redondo(m) + (m === 1 ? ' milla' : ' millas'); }),
+  (x) => x.replace(new RegExp(`(${NUM})\\s?cm(?![a-záéíóúñ])`, 'g'), (_, n) => pulgadas(n)),
+  serie(new RegExp(`(?:${NUM}(?: a | o | y |/))*${NUM}\\s?(?:metros|m)(?![a-záéíóúñ])`, 'g'), (n) => String(Math.round(valor(n) / 0.3)), ' ft'),
+  (x) => x.replace(/\b(unos|los|estos)( \d+(?:,\d+)? (?:pulgadas?|millas?))/gi, (_, d, r) => ({ unos: 'unas', los: 'las', estos: 'estas' })[d.toLowerCase()] + r),
+].reduce((s, f) => f(s), t);
+const enPies = (v) => (typeof v === 'string' ? aPies(v) : Array.isArray(v) ? v.map(enPies) : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, enPies(x)])) : v);
+
 /* ---------- Escritura ---------- */
 const CABECERA = `/* ${P.ATRIBUCION}\n   Archivo generado desde el PDF oficial en español: no editar a mano. */\n`;
 const escribir = (archivo, cuerpo) => { const r = path.join(destino, archivo); fs.writeFileSync(r, CABECERA + cuerpo + '\n'); console.log(archivo, Math.round(fs.statSync(r).size / 1024) + ' KB'); };
@@ -276,8 +307,8 @@ const escribir = (archivo, cuerpo) => { const r = path.join(destino, archivo); f
 const { salida: co, faltan } = conjuros();
 const { res: cr, malas } = criaturas();
 const ob = objetos(), tr = trampas(), es = estados();
-escribir('srd-conjuros.js', 'window.PJ.SRD_CONJUROS = ' + JSON.stringify(co) + ';');
-escribir('srd-dm.js', 'window.PJ.SRD_CRIATURAS = ' + JSON.stringify(cr) + ';\nwindow.PJ.SRD_OBJETOS = ' + JSON.stringify(ob) + ';\nwindow.PJ.SRD_TRAMPAS = ' + JSON.stringify(tr) + ';\nwindow.PJ.SRD_ESTADOS = ' + JSON.stringify(es) + ';');
+escribir('srd-conjuros.js', 'window.PJ.SRD_CONJUROS = ' + JSON.stringify(enPies(co)) + ';');
+escribir('srd-dm.js', 'window.PJ.SRD_CRIATURAS = ' + JSON.stringify(enPies(cr)) + ';\nwindow.PJ.SRD_OBJETOS = ' + JSON.stringify(enPies(ob)) + ';\nwindow.PJ.SRD_TRAMPAS = ' + JSON.stringify(enPies(tr)) + ';\nwindow.PJ.SRD_ESTADOS = ' + JSON.stringify(enPies(es)) + ';');
 
 console.log('\nconjuros', Object.keys(co).length, 'faltan:', faltan.join(', ') || 'ninguno');
 console.log('listas:', revisarListas().join(' · ') || 'coinciden');

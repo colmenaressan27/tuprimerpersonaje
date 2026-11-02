@@ -275,7 +275,7 @@
     const vy = 680, vh = 148;
     const vit = [
       ['ca', 'Defensa (CA)', c.ca.valor], ['pg', 'Vida máxima', c.pgMax], ['iniciativa', 'Iniciativa', c.hayPuntuaciones ? P.signo(c.iniciativa) : ''],
-      ['velocidad', 'Velocidad', c.velocidad ? String(c.velocidad).replace('.', ',') + ' m' : ''], ['competencia', 'Competencia', pj.razaId || pj.claseId ? P.signo(c.comp) : ''], ['percepcion', 'Perc. pasiva', c.hayPuntuaciones ? c.percepcionPasiva : ''],
+      ['velocidad', 'Velocidad', c.velocidad ? c.velocidad + ' ft' : ''], ['competencia', 'Competencia', pj.razaId || pj.claseId ? P.signo(c.comp) : ''], ['percepcion', 'Perc. pasiva', c.hayPuntuaciones ? c.percepcionPasiva : ''],
     ];
     vit.forEach(([id, k, v], i) => {
       const x = M + i * (gw + sep);

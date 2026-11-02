@@ -113,7 +113,7 @@ node pruebas/motor.prueba.js
 Proyecto no oficial, compatible con quinta edición.
 
 - **Reglas:** Esta obra incluye materiales extraídos del Documento de referencia del sistema 5.1 (“SRD 5.1”) de Wizards of the Coast LLC, que está disponible en <https://dnd.wizards.com/es/resources/systems-reference-document>. SRD 5.1 tiene la licencia Creative Commons Atribución/Reconocimiento 4.0 Licencia Pública Internacional, que está disponible en <https://creativecommons.org/licenses/by/4.0/legalcode.es>.
-- **Textos:** las explicaciones están escritas con palabras propias. Los conjuros de la hoja de conjuros, las criaturas, los objetos mágicos, las trampas y los estados son el texto oficial del SRD. Algunas opciones, como ciertas subrazas y trasfondos, no están en el SRD y se explican con palabras propias.
+- **Textos:** las explicaciones están escritas con palabras propias. Los conjuros de la hoja de conjuros, las criaturas, los objetos mágicos, las trampas y los estados son el texto oficial del SRD, con las medidas convertidas de metros a pies, pulgadas y millas. Algunas opciones, como ciertas subrazas y trasfondos, no están en el SRD y se explican con palabras propias.
 - **Iconos:** Lorc, Delapouite y colaboradores en [game-icons.net](https://game-icons.net), con licencia [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/). Se les cambió el color y el tamaño.
 - **Fuentes:** Almendra, Cinzel, Figtree y Atkinson Hyperlegible, con licencia SIL Open Font License.
 - **Librerías:** Bootstrap, Three.js y qrcode-generator (MIT); jsPDF (MIT).

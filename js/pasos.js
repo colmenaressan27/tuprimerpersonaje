@@ -112,7 +112,7 @@
       const bonos = Object.entries(r.bonos).map(([k, v]) => P.signo(v) + ' ' + k.toUpperCase()).join(', ') + (r.eligeCar ? ' y +1 a otras dos' : '');
       det = `<section class="detalle" id="detalle" aria-labelledby="t-det">
         <div class="detalle-cab"><span class="sello">${ico(r.icono)}</span><div><h3 id="t-det">${r.nombre}</h3><p class="ayuda m-0">${esc(r.frase)}</p></div></div>
-        <dl class="datos"><div><dt>Bonos</dt><dd>${bonos}</dd></div><div><dt>Velocidad</dt><dd>${String(r.velocidad).replace('.', ',')} m</dd></div><div><dt>Idiomas</dt><dd>${r.idiomas.join(', ')}</dd></div><div><dt>Buena para</dt><dd>${r.buenas}</dd></div></dl>
+        <dl class="datos"><div><dt>Bonos</dt><dd>${bonos}</dd></div><div><dt>Velocidad</dt><dd>${r.velocidad} ft</dd></div><div><dt>Idiomas</dt><dd>${r.idiomas.join(', ')}</dd></div><div><dt>Buena para</dt><dd>${r.buenas}</dd></div></dl>
         <ul class="talentos">${r.rasgos.map((x) => `<li><strong>${esc(x.n)}:</strong> ${esc(x.d)}</li>`).join('')}</ul>
         ${r.subrazas ? `<div class="bloque"><h3>Elige tu subraza</h3><div class="opciones anchas" role="radiogroup" aria-label="Subraza">${r.subrazas.map((s) => opcion({ name: 'subraza', value: s.id, checked: pj.subrazaId === s.id, t: s.nombre, s: s.frase })).join('')}</div></div>` : ''}
         ${r.eligeCar ? `<div class="bloque"><h3>Elige dos características para tu +1</h3>${casillas('eligeCar', P.CARACT.filter((a) => !r.bonos[a.id]).map((a) => ({ id: a.id, nombre: a.nombre, ej: a.palabra })), pj.eligeCar, r.eligeCar)}</div>` : ''}
@@ -357,7 +357,7 @@
       </ol></section>
     <section class="guia-sec"><h3>Qué puedes hacer en tu turno</h3>
       <div class="tabla"><table><thead><tr><th>Tienes</th><th>Sirve para</th></tr></thead><tbody>
-        <tr><td>Movimiento</td><td>Caminar hasta tu velocidad. Puedes repartirlo antes y después de tu acción.</td></tr>
+        <tr><td>Movimiento</td><td>Caminar hasta tu velocidad, que va en pies (ft): 5 ft son una casilla del tablero. Puedes repartirlo antes y después de tu acción.</td></tr>
         <tr><td>Una acción</td><td>Lo principal de tu turno: atacar, lanzar un conjuro, correr y más.</td></tr>
         <tr><td>Acción adicional</td><td>Solo si un rasgo o conjuro te la da. No todos tienen una.</td></tr>
         <tr><td>Una reacción</td><td>Algo que haces fuera de tu turno cuando pasa algo, una vez por ronda.</td></tr>
@@ -391,7 +391,7 @@
       <p>Un aliado puede estabilizarte con una acción y una prueba de Sabiduría (Medicina) con dificultad 10.</p></section>
     <section class="guia-sec"><h3>Un turno de ejemplo</h3>
       <dl class="dialogo">
-        <div><dt>DM</dt><dd>Es tu turno. El goblin está a 6 metros.</dd></div>
+        <div><dt>DM</dt><dd>Es tu turno. El goblin está a 20 pies.</dd></div>
         <div><dt>Tú</dt><dd>Corro hasta él y le ataco con mi espada.</dd></div>
         <div><dt>DM</dt><dd>Tira para atacar.</dd></div>
         <div><dt>Tú</dt><dd>Saqué 12 y tengo +5. Son 17.</dd></div>

@@ -1,7 +1,7 @@
 # CONTEXTO — tuprimerpersonaje
 
 > Memoria viva del proyecto para personas e IAs: qué es, cómo va, qué se decidió y qué sigue.
-> Última actualización: 2026-11-02 02:04 · rama main · commit ee7cdd7 · sin versión
+> Última actualización: 2026-11-02 12:13 · rama main · commit cccacef · sin versión
 > Cómo mantenerlo: AGENTS.md → «Al terminar un bloque de trabajo».
 
 <!-- hilo:estado:inicio -->
@@ -9,16 +9,16 @@
 - **Qué es:** sitio estático en español para crear un primer personaje de D&D 5.ª edición sin saber nada del juego, con un guía paso a paso.
 - **Fase:** prototipo, publicado en GitHub Pages.
 - **Funciona hoy:** recorrido de 9 pasos, dados 3D con colores, hoja en PDF y JPEG con imagen propia, hoja de conjuros, impresión en blanco y negro, QR sin servidor, Mis personajes, realidad aumentada, Modo DM, guía de combate, lenguaje natural sin IA y Gemini opcional. Datos del SRD 5.1 en español (CC BY 4.0).
-- **Último commit:** `1.1` (`ee7cdd7`). Los cambios del 2026-11-02 de esta sesión están sin commit ni subir.
-- **Verificado:** 40 pruebas en Node y 78 comprobaciones en Chrome.
-- **Siguiente paso:** commit y subida; luego probar con una clave real de Gemini, WebXR en Android real, cámara en un celular real e imprimir una hoja de prueba.
+- **Último commit:** `1.2` (`cccacef`). Las medidas en pies de la última sesión están sin commit ni subir.
+- **Verificado:** 41 pruebas en Node y comprobación en Chrome de hoja, panel y ficha de criatura con velocidad en pies.
+- **Siguiente paso:** commit y subida de las medidas en pies; luego probar con una clave real de Gemini, WebXR en Android real, cámara en un celular real e imprimir una hoja de prueba.
 - **Bloqueos / riesgos:** Gemini solo se ha probado con respuestas simuladas; WebXR y cámara solo en escritorio; la impresión solo generando el PDF desde Chrome.
 <!-- hilo:estado:fin -->
 
 ## 1. Propósito y alcance
 - **Problema / para quién:** personas que nunca jugaron D&D y quieren su primer personaje sin leer el manual.
 - **Incluye:** reglas de 2014 con 9 razas, 12 clases y 13 trasfondos; práctica de dados; subir de nivel hasta 20; guía de consulta y de combate; hoja de conjuros con texto oficial; Mis personajes; realidad aumentada; Modo DM (iniciativa, encuentros, PNJ, objetos y trampas, con o sin Gemini); panel de apariencia y accesibilidad; asistente en lenguaje natural con Gemini opcional y clave propia de cada persona.
-- **Fuente de textos:** SRD 5.1 oficial en español (CC BY 4.0), con 317 criaturas, 240 objetos y 8 trampas. Se usa su texto, no se copia el manual; la atribución es exacta y la app dice «compatible con 5E».
+- **Fuente de textos:** SRD 5.1 oficial en español (CC BY 4.0), con 317 criaturas, 240 objetos y 8 trampas. Se usa su texto, no se copia el manual; las medidas se pasan a pies; la atribución es exacta y la app dice «compatible con 5E».
 - **No incluye (por ahora):** servidor, base de datos ni cuentas. Es un proyecto no oficial, sin respaldo de Wizards of the Coast.
 
 ## 2. Stack y entorno
@@ -84,6 +84,9 @@ fonts/                Almendra, Atkinson, Cinzel y Figtree
 ## 5. Decisiones
 | Fecha | Decisión | Por qué | Alternativa descartada |
 |---|---|---|---|
+| 2026-11-02 | ~~La velocidad se muestra en pies; alcances, visión en la oscuridad y textos del SRD siguen en metros~~ **Sustituida** por la fila siguiente | ~~Lo pidió el usuario; los textos oficiales están en metros~~ | ~~Convertir todas las distancias~~ |
+| 2026-11-02 | ~~Las criaturas del Modo DM convierten su velocidad al mostrarse (`P.dm.velocidadEnPies`), sin tocar `js/srd-dm.js`~~ **Sustituida**: se quitó `P.dm.velocidadEnPies` | ~~No regenerar datos desde el PDF~~ | ~~Convertir en el generador~~ |
+| 2026-11-02 | Todas las medidas se muestran en pies y la conversión se hace en el generador (`herramientas/srd-generar.js`), no al mostrar. Cm y km también se convierten (pulgadas y millas); los pesos en kg no cambian | Lo pidió el usuario; no mezclar unidades, y 5280 ft no se leen | Conservar el texto métrico oficial; convertir al mostrar |
 | 2026-11-02 | Un gusto («me gusta curar») ofrece caminos, nunca decide la clase | La persona debe elegir, y cada gusto admite varias formas de jugar | Asociar cada gusto a una sola clase |
 | 2026-11-02 | Cada tiro es un renglón del selector y elegir uno ya usado intercambia ambas características | Permite colocar todos los repetidos sin perder ninguno | Lista de valores únicos |
 | 2026-11-02 | Repartir por mí prueba todas las permutaciones y puntúa cada una | Aprovecha bonos de raza, gustos y la Fuerza que pide la armadura | Copiar el orden fijo de `clase.reparto` |
@@ -97,7 +100,8 @@ fonts/                Almendra, Atkinson, Cinzel y Figtree
 | 2026-11-02 | Textos públicos sin mencionar D&D | Evita confundir la marca con un producto oficial | — |
 
 ## 6. Pendientes
-- [ ] Hacer commit y subir los cambios del 2026-11-02 (hoy sin commit).
+- [x] Hacer commit y subir los cambios previos del 2026-11-02 (hecho: commits 1.1 y 1.2, `cccacef`).
+- [ ] Hacer commit y subir el cambio de medidas a pies.
 - [ ] Probar con una clave real de Gemini: Imagina, Repartir, Elegir, Sugerir y Modo DM.
 - [ ] Probar WebXR en un Android real.
 - [ ] Probar la cámara en un celular real.
@@ -113,9 +117,24 @@ fonts/                Almendra, Atkinson, Cinzel y Figtree
 - **QR y datos locales:** `concepto`, `metodo` y `tiradas` no viajan en el enlace; se quedan en el dispositivo.
 - **Modo DM:** lo automático cubre solo ataques; las demás acciones se aplican a mano.
 - **Datos del SRD:** Avatar de la muerte y Mosca gigante no se extrajeron del SRD, así que no aparecen.
+- **Medidas en pies:** los textos del SRD ya no son literales en sus medidas (el README lo declara). Algunos volúmenes y el golpe de represalia del bastón usan la edición en inglés, escritos a mano en `herramientas/srd-generar.js`.
+- **Ficha de raza:** muestra la velocidad base aunque la subraza la cambie (elfo 30 ft, elfo del bosque 35 ft). Ya ocurría antes.
 
 ## 8. Bitácora
 <!-- Entradas nuevas ARRIBA. Aquí se conservan las últimas 8; las anteriores se archivan solas en .hilo/historial.md -->
+### 2026-11-02 · sin versión · Claude Code
+- Todas las medidas pasan a pies, a pedido del usuario: armas, rasgos y datos del SRD (conjuros, criaturas, objetos, trampas).
+- La conversión se hace al generar en `herramientas/srd-generar.js` (`enPies`): m a ft, cm a pulgadas o ft, km a millas, km/h a mi/h, m² y m³ a ft² y ft³. Regenerados `js/srd-conjuros.js` y `js/srd-dm.js`.
+- Se quitó `P.dm.velocidadEnPies` de `js/dm.js`; ya no hay mezcla de unidades en la hoja ni en el Modo DM.
+- Pesos (kg) sin cambiar: no se pidieron. Sin commit.
+
+### 2026-11-02 · sin versión · Claude Code
+- La velocidad pasa de metros a pies: razas en 30/25/35 ft y penalización de armadura pesada de −10 ft (`js/datos.js`, `js/motor.js`). Equivalencia: 5 ft = 1,5 m, una casilla.
+- Se muestra en pies en la hoja, el panel lateral, la ficha de raza y la guía de combate (`js/hoja.js`, `js/app.js`, `js/pasos.js`, `js/dm-vista.js`).
+- Modo DM: las criaturas se convierten al mostrarlas con `P.dm.velocidadEnPies` (`js/dm.js`); `js/srd-dm.js` no cambia.
+- Alcances de armas, visión en la oscuridad y textos oficiales del SRD siguen en metros. README actualizado.
+- Verificado con 41 pruebas en Node (nueva prueba de velocidad en `pruebas/motor.prueba.js`). Sin commit.
+
 ### 2026-11-02 · sin versión · Claude Code
 - Reparto y datos: «Repartir por mí» pone el número más alto en la característica clave; el equipo ofrece opciones (a)/(b) del SRD y todas las armas (`js/motor.js`, `js/datos.js`).
 - Nuevas pantallas: Mis personajes con migración de `tpp.estado` (`js/guardados.js`), imagen propia en la hoja (`js/hoja.js`), hoja de conjuros con texto oficial de las páginas 101+ (`js/srd-conjuros.js`), «Nivel ____» y dados de golpe a mano, y colores de dados (`js/dados3d.js`).
